@@ -48,7 +48,7 @@ body{
 }
 .shell{
   width:100%;max-width:460px;background:var(--surface);
-  min-height:100vh;display:flex;flex-direction:column;
+  min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;
   box-shadow:0 0 0 1px var(--line), 0 24px 60px rgba(15,23,32,.14);
   position:relative;
 }
@@ -189,9 +189,11 @@ pre .k{color:#7FBFA9}
 
 /* nav */
 nav{
-  position:fixed;bottom:0;width:100%;max-width:460px;background:rgba(255,255,255,.94);
+  position:fixed;left:50%;bottom:0;transform:translateX(-50%);
+  width:100%;max-width:460px;background:rgba(255,255,255,.94);
   backdrop-filter:blur(12px);border-top:1px solid var(--line);
   display:grid;grid-template-columns:repeat(5,1fr);padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+  z-index:40;
 }
 nav button{border:0;background:none;cursor:pointer;padding:5px 2px;
   font-family:var(--sans);font-size:10.5px;font-weight:700;color:var(--muted);
