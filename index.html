@@ -3,17 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>債務儀表 FinGuard</title>
-<link rel="manifest" href="./manifest.webmanifest">
-<meta name="theme-color" content="#0F1720">
-<meta name="description" content="個人負債、金流與預算的單一儀表板。所有試算在裝置上完成。">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="債務儀表">
-<meta name="format-detection" content="telephone=no">
-<link rel="apple-touch-icon" href="./icons/icon-180.png">
-<link rel="icon" href="./icons/favicon.png" sizes="64x64">
+<title>債務儀表 — 個人理財管家原型</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -56,31 +46,10 @@ body{
 
 /* ---------- header ---------- */
 header{
-  padding:calc(22px + env(safe-area-inset-top)) 20px 18px;
+  padding:22px 20px 18px;
   background:linear-gradient(160deg,#0F1720 0%,#16323C 100%);
   color:#fff;
 }
-@media(min-width:600px){ header{padding-top:22px} }
-
-/* update toast */
-#updateBar{
-  position:fixed;left:50%;transform:translateX(-50%) translateY(140%);
-  bottom:calc(78px + env(safe-area-inset-bottom));
-  width:min(420px,calc(100% - 28px));z-index:50;
-  background:#0F1720;color:#fff;border-radius:13px;
-  padding:13px 14px;display:flex;align-items:center;gap:12px;
-  box-shadow:0 10px 30px rgba(15,23,32,.35);
-  transition:transform .32s cubic-bezier(.2,.8,.3,1);
-}
-#updateBar.show{transform:translateX(-50%) translateY(0)}
-#updateBar p{flex:1;font-size:12.5px;line-height:1.55}
-#updateBar p b{display:block;font-size:13.5px;margin-bottom:1px}
-#updateBar button{
-  border:0;border-radius:8px;padding:9px 14px;cursor:pointer;
-  background:#7FBFA9;color:#0F1720;font-family:var(--sans);
-  font-size:12.5px;font-weight:700;flex:none;
-}
-#updateBar+.x,.build{font-family:var(--mono);font-size:10px;color:var(--muted);opacity:.8}
 .eyebrow{
   font-family:var(--mono);font-size:10px;letter-spacing:.22em;
   text-transform:uppercase;color:#7FBFA9;
@@ -313,34 +282,11 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
   </div>
 
   <div class="sec">
-    <div class="sec-title">信用卡・依實際帳單資料</div>
+    <div class="sec-title">固定支出（自己填）</div>
     <div class="card">
-      <div class="hint" style="margin:0 0 12px">
-      三張卡的通知信只有永豐把金額寫在信件本文裡，星展、台新的金額鎖在加密 PDF 附件中，暫時抓不到，需你自行輸入。
-      </div>
-      <label class="fld"><span class="lb">永豐銀行・近期繳款（信箱資料）<b id="ccSinoLb">7,600</b></span>
-        <input type="number" id="ccSino" value="7600" step="100" min="0"></label>
-      <div class="hint" style="margin:0 0 13px">近 12 個月實際繳款：26,837 / 69 / 19,011 / 510 / 14,583 / 4,154 / 7,600 元，波動很大，代表消費以臨時性居多，不是穩定月租型。</div>
-      <label class="fld"><span class="lb">星展銀行・待你輸入（帳單約每月 23 日產製）<b id="ccDbsLb">0</b></span>
-        <input type="number" id="ccDbs" value="0" step="500" min="0" placeholder="從 DBS Card+ App 查當期應繳"></label>
-      <label class="fld" style="margin-bottom:0"><span class="lb">台新銀行・待你輸入（結帳週期每月 17 日）<b id="ccTsLb">0</b></span>
-        <input type="number" id="ccTs" value="0" step="500" min="0" placeholder="從 Richart Life App 查當期應繳"></label>
-    </div>
-  </div>
-
-  <div class="sec">
-    <div class="sec-title">房租 / 水電 / 通訊・保險</div>
-    <div class="card">
+      <label class="fld"><span class="lb">信用卡當期應繳<b id="ccLb">—</b></span><input type="number" id="cc" value="12000" step="500" min="0"></label>
       <label class="fld"><span class="lb">房租 / 水電 / 通訊<b id="rentLb">—</b></span><input type="number" id="rent" value="15000" step="500" min="0"></label>
       <label class="fld" style="margin-bottom:0"><span class="lb">保險 / 其他年繳攤提<b id="insLb">—</b></span><input type="number" id="ins" value="3000" step="500" min="0"></label>
-    </div>
-  </div>
-
-  <div class="sec">
-    <div class="sec-title">永豐卡・信箱抓到的實際繳款趨勢</div>
-    <div class="card">
-      <svg id="sinoTrend" viewBox="0 0 400 110" style="width:100%" role="img" aria-label="永豐信用卡近12個月繳款趨勢"></svg>
-      <div class="hint" style="margin-top:8px">這是唯一有真實信箱資料佐證的一張卡。振幅從 41 元到 26,837 元，代表這張卡上的消費以臨時性、非固定支出為主——正好呼應「每月必要／臨時」該分開看的理由。星展、台新無法從信件內容取得金額，需自行查詢補上。</div>
     </div>
   </div>
 
@@ -735,49 +681,16 @@ function renderDSR(){
   renderBudget();
 }
 
-const SINO_HISTORY = [
-  {m:'25/03', v:26837}, {m:'25/06', v:69}, {m:'25/07a', v:41}, {m:'25/07b', v:19011},
-  {m:'26/01', v:510}, {m:'26/03', v:14583}, {m:'26/04', v:4154}, {m:'26/07', v:7600}
-];
-
-function renderSinoTrend(){
-  const el = $('#sinoTrend');
-  if(!el) return;
-  const W=400,H=110,padL=34,padR=10,padT=10,padB=22;
-  const vals = SINO_HISTORY.map(d=>d.v);
-  const max = Math.max(...vals)*1.08;
-  const x = i => padL + (W-padL-padR) * (i/(SINO_HISTORY.length-1));
-  const y = v => padT + (H-padT-padB) * (1 - v/max);
-  let g = '';
-  [0,0.5,1].forEach(f=>{
-    const yy = padT + (H-padT-padB)*(1-f);
-    g += `<line x1="${padL}" y1="${yy}" x2="${W-padR}" y2="${yy}" stroke="var(--line)" stroke-width="1"/>`;
-    g += `<text x="${padL-6}" y="${yy+3}" fill="var(--muted)" font-size="8" font-family="IBM Plex Mono" text-anchor="end">${fmt(max*f/1000)}k</text>`;
-  });
-  let path = SINO_HISTORY.map((d,i)=>`${i===0?'M':'L'}${x(i).toFixed(1)} ${y(d.v).toFixed(1)}`).join(' ');
-  g += `<path d="${path}" fill="none" stroke="var(--jade)" stroke-width="2" stroke-linejoin="round"/>`;
-  SINO_HISTORY.forEach((d,i)=>{
-    g += `<circle cx="${x(i).toFixed(1)}" cy="${y(d.v).toFixed(1)}" r="3" fill="var(--jade)"/>`;
-    g += `<text x="${x(i).toFixed(1)}" y="${H-6}" fill="var(--muted)" font-size="7.5" font-family="IBM Plex Mono" text-anchor="middle">${d.m}</text>`;
-  });
-  const last = SINO_HISTORY[SINO_HISTORY.length-1];
-  g += `<text x="${x(SINO_HISTORY.length-1).toFixed(1)}" y="${y(last.v)-8}" fill="var(--ink)" font-size="10" font-family="IBM Plex Mono" font-weight="600" text-anchor="middle">${fmt(last.v)}</text>`;
-  el.innerHTML = g;
-}
-
 function renderBudget(){
   const inc = +$('#income').value || 0;
   const debt = LOANS.reduce((s,l)=>s+l.payment,0);
-  const ccSino = +$('#ccSino').value||0, ccDbs = +$('#ccDbs').value||0, ccTs = +$('#ccTs').value||0;
-  const cc = ccSino + ccDbs + ccTs;
-  const rent = +$('#rent').value||0, ins = +$('#ins').value||0;
-  $('#ccSinoLb').textContent = fmt(ccSino); $('#ccDbsLb').textContent = fmt(ccDbs); $('#ccTsLb').textContent = fmt(ccTs);
-  $('#rentLb').textContent = fmt(rent); $('#insLb').textContent = fmt(ins);
+  const cc = +$('#cc').value||0, rent = +$('#rent').value||0, ins = +$('#ins').value||0;
+  $('#ccLb').textContent = fmt(cc); $('#rentLb').textContent = fmt(rent); $('#insLb').textContent = fmt(ins);
   const fixed = debt + cc + rent + ins;
   const left = inc - fixed;
   const parts = [
     ['貸款還款', debt, '#463B96'],
-    ['信用卡（三卡合計）', cc, '#B23A2E'],
+    ['信用卡',   cc,   '#B23A2E'],
     ['居住固定', rent, '#B07A0C'],
     ['保險攤提', ins,  '#5A6B78'],
     ['可支配',   Math.max(left,0), '#0E7A5F']
@@ -786,11 +699,9 @@ function renderBudget(){
   $('#budBars').innerHTML =
     parts.map(p=>`<div class="bud"><div class="bud-row"><span>${p[0]}</span><b>${fmt(p[1])} · ${(p[1]/denom*100).toFixed(0)}%</b></div>
       <div class="bud-track"><i style="width:${p[1]/denom*100}%;background:${p[2]}"></i></div></div>`).join('');
-  const missing = (ccDbs===0?1:0) + (ccTs===0?1:0);
-  $('#budHint').innerHTML = (left < 0
+  $('#budHint').innerHTML = left < 0
     ? `<span style="color:var(--alarm)"><b>缺口 ${fmt(-left)} 元。</b>固定支出已經超過收入，這個月靠現金或循環信用補的話，等於用更高的利率借新還舊。優先處理順序是：先確認繳款不斷、再談降息或協商展期。</span>`
-    : `扣掉全部固定支出後剩 <b>${fmt(left)}</b> 元。在有債的階段，比較穩的分法是把它切成 <b>生活費 ${fmt(left*0.6)}</b>、<b>加速還款 ${fmt(left*0.25)}</b>、<b>緊急金 ${fmt(left*0.15)}</b>。`)
-    + (missing ? `<br><br><span style="color:var(--caution)">目前 ${missing} 張卡的金額還沒填（值為 0），信用卡欄位是被低估的，實際可支配金額會比這裡顯示的更少。</span>` : '');
+    : `扣掉全部固定支出後剩 <b>${fmt(left)}</b> 元。在有債的階段，比較穩的分法是把它切成 <b>生活費 ${fmt(left*0.6)}</b>、<b>加速還款 ${fmt(left*0.25)}</b>、<b>緊急金 ${fmt(left*0.15)}</b>。`;
 
   const days = 30;
   const spend = Math.max(left,0)*0.6;
@@ -798,7 +709,6 @@ function renderBudget(){
   $('#dailyCap').innerHTML = left<=0
     ? '固定支出已吃掉全部收入，目前沒有可設定的日花上限。'
     : `每日餐飲娛樂購物的上限。超過連續三天，App 會在第四天早上把數字改成紅的，並自動下修剩餘天數的額度。`;
-  renderSinoTrend();
   renderEF();
 }
 
@@ -807,8 +717,7 @@ function renderEF(){
   $('#cashLb').textContent = fmt(cash);
   const inc = +$('#income').value||0;
   const debt = LOANS.reduce((s,l)=>s+l.payment,0);
-  const cc = (+$('#ccSino').value||0) + (+$('#ccDbs').value||0) + (+$('#ccTs').value||0);
-  const rent = +$('#rent').value||0, ins = +$('#ins').value||0;
+  const cc = +$('#cc').value||0, rent = +$('#rent').value||0, ins = +$('#ins').value||0;
   const burn = debt+cc+rent+ins+Math.max(inc-(debt+cc+rent+ins),0)*0.6;
   const months = burn>0 ? cash/burn : 0;
   const target = burn*6;
@@ -864,8 +773,7 @@ function renderAlloc(){
   const cash = +$('#cash').value||0;
   const inc = +$('#income').value||0;
   const debt = LOANS.reduce((s,l)=>s+l.payment,0);
-  const cc = (+$('#ccSino').value||0) + (+$('#ccDbs').value||0) + (+$('#ccTs').value||0);
-  const rent = +$('#rent').value||0, ins = +$('#ins').value||0;
+  const cc=+$('#cc').value||0, rent=+$('#rent').value||0, ins=+$('#ins').value||0;
   const burn = debt+cc+rent+ins;
   const efShort = Math.max(burn*6 - cash, 0);
   const hi = LOANS.filter(l=>l.rate>exp).sort((a,b)=>b.rate-a.rate);
@@ -906,7 +814,7 @@ $$('.seg button').forEach(b=>b.onclick=()=>{
 });
 $('#extra').oninput = renderStrategy;
 $('#income').oninput = ()=>{ renderDSR(); };
-['#ccSino','#ccDbs','#ccTs','#rent','#ins'].forEach(s=>$(s).oninput = renderBudget);
+['#cc','#rent','#ins'].forEach(s=>$(s).oninput = renderBudget);
 $('#cash').oninput = renderEF;
 $('#free').oninput = renderAlloc;
 $('#exp').oninput = ()=>{ renderHurdle(); renderAlloc(); };
@@ -917,108 +825,6 @@ $('#exp').oninput = ()=>{ renderHurdle(); renderAlloc(); };
    ══════════════════════════════════════════════ */
 renderHeader(); renderFlags(); renderCalendar(); renderDebtCards();
 renderStrategy(); renderDSR(); renderHurdle();
-</script>
-
-<div id="updateBar" role="status" aria-live="polite">
-  <p><b>有新版本</b><span id="updateMsg">下次開啟時會自動套用，也可以現在更新。</span></p>
-  <button id="updateNow">立即更新</button>
-</div>
-
-<script>
-/* ══════════════════════════════════════════════
-   PWA：註冊 service worker 與自動更新
-   ══════════════════════════════════════════════
-   更新策略
-   - 每次進到前景、以及每小時，主動向伺服器問一次有沒有新版
-   - 抓到新版時不會當場重整（避免打斷正在輸入的欄位），
-     而是顯示提示；使用者可立即套用，否則下次回到前景時自動套用
-*/
-(() => {
-  const BUILD = '__BUILD_VERSION__';
-  const bar = document.getElementById('updateBar');
-  const btn = document.getElementById('updateNow');
-  const msg = document.getElementById('updateMsg');
-
-  // 顯示目前版本（每頁底部）
-  const stamp = (v, t) => {
-    document.querySelectorAll('footer').forEach(f => {
-      if (f.querySelector('.build')) return;
-      const s = document.createElement('div');
-      s.className = 'build';
-      s.style.marginTop = '6px';
-      s.textContent = `build ${v}${t ? ' · ' + t.slice(0, 10) : ''}`;
-      f.appendChild(s);
-    });
-  };
-  stamp(BUILD.startsWith('__') ? 'dev' : BUILD);
-
-  fetch('./version.json', { cache: 'no-store' })
-    .then(r => r.ok ? r.json() : null)
-    .then(d => { if (d) { document.querySelectorAll('.build').forEach(e => e.remove()); stamp(d.version, d.builtAt); } })
-    .catch(() => {});
-
-  if (!('serviceWorker' in navigator)) return;
-
-  let waiting = null;        // 已下載完、等著接手的新版
-  let reloading = false;
-
-  const offerUpdate = worker => {
-    waiting = worker;
-    bar.classList.add('show');
-  };
-
-  const applyUpdate = () => {
-    // 不論背後的 service worker 狀態如何，按下去畫面要立刻有反應。
-    bar.classList.remove('show');
-    btn.disabled = true;
-
-    if (!waiting || reloading) return;
-    reloading = true;
-    waiting.postMessage('SKIP_WAITING');
-
-    // 正常情況 controllerchange 會在一兩秒內觸發並重整。
-    // 如果沒有（例如舊版 service worker 還沒真正進入 waiting 狀態），
-    // 保險起見還是重整一次，不要讓使用者卡在「按了但沒變化」的狀態。
-    setTimeout(() => { if (reloading) location.reload(); }, 2500);
-  };
-
-  btn.addEventListener('click', applyUpdate);
-
-  // 只有在「我們主動要求套用」時才重整。
-  // 首次安裝時 clients.claim() 也會觸發這個事件，那時不該重整。
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (reloading) location.reload();
-  });
-
-  navigator.serviceWorker.register('./sw.js', { scope: './' }).then(reg => {
-
-    // 首次安裝完成、且頁面原本就受控 → 表示這是「更新」而非「初次安裝」
-    if (reg.waiting && navigator.serviceWorker.controller) offerUpdate(reg.waiting);
-
-    reg.addEventListener('updatefound', () => {
-      const nw = reg.installing;
-      if (!nw) return;
-      nw.addEventListener('statechange', () => {
-        if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-          offerUpdate(nw);
-        }
-      });
-    });
-
-    const checkForUpdate = () => reg.update().catch(() => {});
-
-    // 回到前景時：先套用上次已備妥的更新，再去問有沒有更新的
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState !== 'visible') return;
-      if (waiting) { applyUpdate(); return; }
-      checkForUpdate();
-    });
-
-    window.addEventListener('online', checkForUpdate);
-    setInterval(checkForUpdate, 60 * 60 * 1000);
-    checkForUpdate();
-  }).catch(err => console.warn('SW 註冊失敗：', err));
-})();
 </script>
 </body>
 </html>
