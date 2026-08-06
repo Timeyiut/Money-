@@ -169,11 +169,13 @@ pre .k{color:#7FBFA9}
 
 /* nav */
 nav{
-  position:fixed;left:50%;bottom:0;transform:translateX(-50%);
-  width:100%;max-width:460px;background:rgba(255,255,255,.94);
-  backdrop-filter:blur(12px);border-top:1px solid var(--line);
+  position:fixed;left:50%;bottom:0;transform:translateX(-50%) translateZ(0);
+  -webkit-transform:translateX(-50%) translateZ(0);
+  will-change:transform;
+  width:100%;max-width:460px;background:rgba(255,255,255,.98);
+  border-top:1px solid var(--line);
   display:grid;grid-template-columns:repeat(5,1fr);padding:8px 4px calc(8px + env(safe-area-inset-bottom));
-  z-index:40;
+  z-index:40;min-height:56px;
 }
 nav button{border:0;background:none;cursor:pointer;padding:5px 2px;
   font-family:var(--sans);font-size:10.5px;font-weight:700;color:var(--muted);
@@ -185,7 +187,9 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
 
 /* update toast */
 #updateBar{
-  position:fixed;left:50%;transform:translateX(-50%) translateY(140%);
+  position:fixed;left:50%;transform:translate3d(-50%,140%,0);
+  -webkit-transform:translate3d(-50%,140%,0);
+  will-change:transform;
   bottom:calc(78px + env(safe-area-inset-bottom));
   width:min(420px,calc(100% - 28px));z-index:50;
   background:#0F1720;color:#fff;border-radius:13px;
@@ -193,7 +197,7 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
   box-shadow:0 10px 30px rgba(15,23,32,.35);
   transition:transform .32s cubic-bezier(.2,.8,.3,1);
 }
-#updateBar.show{transform:translateX(-50%) translateY(0)}
+#updateBar.show{transform:translate3d(-50%,0,0);-webkit-transform:translate3d(-50%,0,0)}
 #updateBar p{flex:1;font-size:12.5px;line-height:1.55}
 #updateBar p b{display:block;font-size:13.5px;margin-bottom:1px}
 #updateBar button{
