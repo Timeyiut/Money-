@@ -907,11 +907,18 @@ renderStrategy(); renderDSR(); renderHurdle();
   };
 
   const applyUpdate = () => {
+    // 不論背後的 service worker 狀態如何，按下去畫面要立刻有反應。
+    bar.classList.remove('show');
+    btn.disabled = true;
+
     if (!waiting || reloading) return;
     reloading = true;
-    msg.textContent = '正在套用…';
-    btn.disabled = true;
     waiting.postMessage('SKIP_WAITING');
+
+    // 正常情況 controllerchange 會在一兩秒內觸發並重整。
+    // 如果沒有（例如舊版 service worker 還沒真正進入 waiting 狀態），
+    // 保險起見還是重整一次，不要讓使用者卡在「按了但沒變化」的狀態。
+    setTimeout(() => { if (reloading) location.reload(); }, 2500);
   };
 
   btn.addEventListener('click', applyUpdate);
