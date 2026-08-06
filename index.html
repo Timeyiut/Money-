@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>債務儀表 FinGuard</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#0F1720">
+<meta name="description" content="個人負債、金流與預算的單一儀表板。所有試算在裝置上完成。">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="債務儀表">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="./icons/icon-180.png">
+<link rel="icon" href="./icons/favicon.png" sizes="64x64">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E4E8ED;
+  --surface:#FFFFFF;
+  --surface-2:#F3F5F8;
+  --ink:#0F1720;
+  --ink-2:#3D4A57;
+  --muted:#7A8794;
+  --line:#DDE3EA;
+  --jade:#0E7A5F;
+  --jade-soft:#E3F2ED;
+  --alarm:#B23A2E;
+  --alarm-soft:#FBEAE7;
+  --caution:#B07A0C;
+  --caution-soft:#FBF2DE;
+  --violet:#463B96;
+  --violet-soft:#EBE9F7;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:'Noto Sans TC',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg);
+  font-family:var(--sans);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  display:flex;justify-content:center;
+}
+.shell{
+  width:100%;max-width:460px;background:var(--surface);
+  min-height:100vh;display:flex;flex-direction:column;
+  box-shadow:0 0 0 1px var(--line), 0 24px 60px rgba(15,23,32,.14);
+  position:relative;
+}
+@media(min-width:600px){ .shell{margin:24px 0;min-height:calc(100vh - 48px);border-radius:20px;overflow:hidden} }
+
+/* ---------- header ---------- */
+header{
+  padding:calc(22px + env(safe-area-inset-top)) 20px 18px;
+  background:linear-gradient(160deg,#0F1720 0%,#16323C 100%);
+  color:#fff;
+}
+@media(min-width:600px){ header{padding-top:22px} }
+
+/* update toast */
+#updateBar{
+  position:fixed;left:50%;transform:translateX(-50%) translateY(140%);
+  bottom:calc(78px + env(safe-area-inset-bottom));
+  width:min(420px,calc(100% - 28px));z-index:50;
+  background:#0F1720;color:#fff;border-radius:13px;
+  padding:13px 14px;display:flex;align-items:center;gap:12px;
+  box-shadow:0 10px 30px rgba(15,23,32,.35);
+  transition:transform .32s cubic-bezier(.2,.8,.3,1);
+}
+#updateBar.show{transform:translateX(-50%) translateY(0)}
+#updateBar p{flex:1;font-size:12.5px;line-height:1.55}
+#updateBar p b{display:block;font-size:13.5px;margin-bottom:1px}
+#updateBar button{
+  border:0;border-radius:8px;padding:9px 14px;cursor:pointer;
+  background:#7FBFA9;color:#0F1720;font-family:var(--sans);
+  font-size:12.5px;font-weight:700;flex:none;
+}
+#updateBar+.x,.build{font-family:var(--mono);font-size:10px;color:var(--muted);opacity:.8}
+.eyebrow{
+  font-family:var(--mono);font-size:10px;letter-spacing:.22em;
+  text-transform:uppercase;color:#7FBFA9;
+}
+.total{
+  font-family:var(--mono);font-weight:600;font-size:40px;letter-spacing:-.02em;
+  line-height:1.05;margin-top:6px;font-variant-numeric:tabular-nums;
+}
+.total small{font-size:15px;opacity:.6;font-weight:400;margin-right:4px}
+.hdr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:18px;
+  background:rgba(255,255,255,.13);border-radius:10px;overflow:hidden}
+.hdr-grid div{background:#16323C;padding:10px 8px}
+.hdr-grid .k{font-size:10px;color:#9FC4BA;letter-spacing:.06em}
+.hdr-grid .v{font-family:var(--mono);font-size:16px;font-weight:600;margin-top:3px;font-variant-numeric:tabular-nums}
+
+/* ---------- content ---------- */
+main{flex:1;overflow-y:auto;padding:16px 16px 96px;background:var(--surface-2)}
+.panel{display:none}
+.panel.on{display:block;animation:fade .28s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.sec{margin-bottom:18px}
+.sec-title{
+  font-size:11px;font-weight:700;letter-spacing:.16em;color:var(--muted);
+  display:flex;align-items:center;gap:8px;margin-bottom:9px;
+}
+.sec-title::after{content:"";flex:1;height:1px;background:var(--line)}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:15px}
+.card + .card{margin-top:10px}
+
+/* debt card */
+.debt{position:relative;overflow:hidden}
+.debt .stripe{position:absolute;left:0;top:0;bottom:0;width:4px}
+.debt-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.debt-name{font-weight:700;font-size:15px}
+.debt-bank{font-size:11px;color:var(--muted);margin-top:2px}
+.debt-bal{font-family:var(--mono);font-weight:600;font-size:19px;font-variant-numeric:tabular-nums;text-align:right}
+.rate-chip{
+  display:inline-block;font-family:var(--mono);font-size:11px;font-weight:600;
+  padding:2px 7px;border-radius:5px;margin-top:5px;
+}
+.debt-rows{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px;
+  display:grid;grid-template-columns:1fr 1fr;gap:9px 12px}
+.kv .k{font-size:10.5px;color:var(--muted)}
+.kv .v{font-family:var(--mono);font-size:13.5px;font-weight:500;margin-top:2px;font-variant-numeric:tabular-nums}
+.bar{height:5px;background:var(--line);border-radius:3px;margin-top:12px;overflow:hidden}
+.bar span{display:block;height:100%;border-radius:3px}
+
+/* flag */
+.flag{border-radius:12px;padding:12px 13px;display:flex;gap:10px;font-size:12.5px;line-height:1.6}
+.flag .dot{width:7px;height:7px;border-radius:50%;flex:none;margin-top:6px}
+.flag b{display:block;font-size:13px;margin-bottom:2px}
+.flag + .flag{margin-top:8px}
+.f-alarm{background:var(--alarm-soft);color:#6E2018} .f-alarm .dot{background:var(--alarm)}
+.f-caution{background:var(--caution-soft);color:#6B4A05} .f-caution .dot{background:var(--caution)}
+.f-jade{background:var(--jade-soft);color:#0A4A3A} .f-jade .dot{background:var(--jade)}
+
+/* waterfall — signature */
+.wf{background:#0F1720;border-radius:14px;padding:16px 14px 12px;color:#fff}
+.wf h4{font-size:12px;letter-spacing:.1em;color:#7FBFA9;font-weight:700}
+.wf p{font-size:11px;color:#94A3AE;margin-top:4px;line-height:1.6}
+.wf-svg{width:100%;margin-top:12px;display:block}
+.wf-legend{display:flex;gap:12px;margin-top:8px;font-size:10px;color:#94A3AE;flex-wrap:wrap}
+.wf-legend i{width:8px;height:8px;border-radius:2px;display:inline-block;margin-right:4px}
+
+/* controls */
+label.fld{display:block;margin-bottom:11px}
+label.fld .lb{font-size:11px;color:var(--muted);display:flex;justify-content:space-between;margin-bottom:5px}
+label.fld .lb b{font-family:var(--mono);color:var(--ink);font-weight:600}
+input[type=number],input[type=text]{
+  width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;
+  font-family:var(--mono);font-size:14px;background:var(--surface-2);color:var(--ink);
+}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--jade);outline-offset:1px}
+input[type=range]{width:100%;accent-color:var(--jade)}
+.seg{display:flex;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:transparent;padding:8px 4px;border-radius:7px;
+  font-family:var(--sans);font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--ink);color:#fff}
+
+.result{background:var(--jade-soft);border-radius:12px;padding:13px;margin-top:12px}
+.result .big{font-family:var(--mono);font-size:26px;font-weight:600;color:var(--jade);font-variant-numeric:tabular-nums}
+.result .cap{font-size:11px;color:#0A4A3A;margin-top:3px;line-height:1.6}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{padding:8px 4px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{font-size:10.5px;color:var(--muted);font-weight:500;letter-spacing:.05em}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* budget bars */
+.bud{margin-top:11px}
+.bud-row{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px}
+.bud-row b{font-family:var(--mono);font-weight:600}
+.bud-track{height:9px;border-radius:5px;background:var(--surface-2);overflow:hidden;display:flex}
+.bud-track i{display:block;height:100%}
+
+.hint{font-size:11.5px;color:var(--muted);line-height:1.7;margin-top:9px}
+code{font-family:var(--mono);font-size:11.5px;background:var(--surface-2);
+  padding:1px 5px;border-radius:4px;color:var(--violet)}
+pre{background:#0F1720;color:#D6E2E0;border-radius:12px;padding:13px;overflow-x:auto;
+  font-family:var(--mono);font-size:11px;line-height:1.75}
+pre .c{color:#6C8A85}
+pre .k{color:#7FBFA9}
+
+/* nav */
+nav{
+  position:fixed;bottom:0;width:100%;max-width:460px;background:rgba(255,255,255,.94);
+  backdrop-filter:blur(12px);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:repeat(5,1fr);padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+}
+nav button{border:0;background:none;cursor:pointer;padding:5px 2px;
+  font-family:var(--sans);font-size:10.5px;font-weight:700;color:var(--muted);
+  display:flex;flex-direction:column;align-items:center;gap:4px}
+nav button svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round}
+nav button[aria-current=page]{color:var(--jade)}
+footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;text-align:center}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<header>
+  <div class="eyebrow">Total outstanding debt</div>
+  <div class="total"><small>NT$</small><span id="hTotal">—</span></div>
+  <div class="hdr-grid">
+    <div><div class="k">每月固定還款</div><div class="v" id="hPay">—</div></div>
+    <div><div class="k">每月利息</div><div class="v" id="hInt">—</div></div>
+    <div><div class="k">加權年利率</div><div class="v" id="hRate">—</div></div>
+  </div>
+</header>
+
+<main>
+
+<!-- ══════════ 總覽 ══════════ -->
+<section class="panel on" id="p-home">
+  <div class="sec">
+    <div class="sec-title">需要處理的三件事</div>
+    <div id="flags"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">本月繳款行事曆</div>
+    <div class="card"><table id="calTbl"></table></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">負債體檢</div>
+    <div class="card">
+      <label class="fld">
+        <span class="lb">每月稅後收入<b id="incLb">—</b></span>
+        <input type="number" id="income" value="70000" step="1000" min="0">
+      </label>
+      <div id="dsrBox"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 債務 ══════════ -->
+<section class="panel" id="p-debt">
+  <div class="sec">
+    <div class="sec-title">四筆貸款・依利率由高至低</div>
+    <div id="debtCards"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">中國信託・同一筆整合案的兩個帳號</div>
+    <div class="card">
+      <div class="hint" style="margin:0 0 12px">
+      3362 與 3375 撥款日、到期日、利率、期數完全相同，扣款帳戶也是同一個。實務上這是<b>一次 1,676,185 元的整合案拆成兩個額度核給</b>，管理上要當成一筆看。
+      </div>
+      <table>
+        <thead><tr><th></th><th>3362</th><th>3375</th><th>合計</th></tr></thead>
+        <tbody>
+          <tr><td>原始金額</td><td class="num">1,396,185</td><td class="num">280,000</td><td class="num"><b>1,676,185</b></td></tr>
+          <tr><td>目前餘額</td><td class="num">1,123,248</td><td class="num">225,253</td><td class="num"><b>1,348,501</b></td></tr>
+          <tr><td>月付</td><td class="num">18,220</td><td class="num">3,654</td><td class="num"><b>21,874</b></td></tr>
+          <tr><td>已還本金</td><td class="num">19.5%</td><td class="num">19.6%</td><td class="num"><b>19.6%</b></td></tr>
+        </tbody>
+      </table>
+      <div class="flag f-caution" style="margin-top:13px"><span class="dot"></span><div>
+        <b>每月 14 日，同一個帳戶要備妥 21,874</b>
+        兩筆共用扣款帳號 822-0000229540180164。餘額不足時是兩筆同時扣不成功，違約紀錄會記兩次。App 的 D-5 提醒應該以合併金額檢核，不是分開檢核。
+      </div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">還款瀑布</div>
+    <div class="wf">
+      <h4>PAYOFF WATERFALL</h4>
+      <p>每一條在結清那個月斷掉，釋出的月付金就往下一筆流。這張圖的重點不是誰欠得多，是「哪一年開始，你的現金流會突然變輕」。</p>
+      <svg class="wf-svg" id="wfSvg" viewBox="0 0 400 190" role="img" aria-label="各筆貸款結清時間軸"></svg>
+      <div class="wf-legend" id="wfLegend"></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">加速還款試算</div>
+    <div class="card">
+      <div class="seg" role="group" aria-label="還款策略">
+        <button data-strat="none" aria-pressed="true">維持現狀</button>
+        <button data-strat="avalanche" aria-pressed="false">利率優先</button>
+        <button data-strat="snowball" aria-pressed="false">餘額優先</button>
+      </div>
+      <label class="fld" style="margin-top:13px">
+        <span class="lb">每月額外投入<b id="extraLb">0</b></span>
+        <input type="range" id="extra" min="0" max="20000" step="500" value="0">
+      </label>
+      <div class="result">
+        <div class="big" id="saveInt">—</div>
+        <div class="cap" id="saveCap">選一種策略，看利息省多少、提早幾個月無債。</div>
+      </div>
+      <table id="stratTbl" style="margin-top:12px"></table>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 金流 ══════════ -->
+<section class="panel" id="p-flow">
+  <div class="sec">
+    <div class="sec-title">這個月的錢怎麼分</div>
+    <div class="card">
+      <div id="budBars"></div>
+      <div class="hint" id="budHint"></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">固定支出（自己填）</div>
+    <div class="card">
+      <label class="fld"><span class="lb">信用卡當期應繳<b id="ccLb">—</b></span><input type="number" id="cc" value="12000" step="500" min="0"></label>
+      <label class="fld"><span class="lb">房租 / 水電 / 通訊<b id="rentLb">—</b></span><input type="number" id="rent" value="15000" step="500" min="0"></label>
+      <label class="fld" style="margin-bottom:0"><span class="lb">保險 / 其他年繳攤提<b id="insLb">—</b></span><input type="number" id="ins" value="3000" step="500" min="0"></label>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">每日可花上限</div>
+    <div class="card" style="text-align:center;padding:22px 15px">
+      <div style="font-family:var(--mono);font-size:44px;font-weight:600;letter-spacing:-.03em" id="daily">—</div>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.7" id="dailyCap"></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">緊急預備金</div>
+    <div class="card">
+      <label class="fld"><span class="lb">目前可動用現金<b id="cashLb">—</b></span><input type="number" id="cash" value="50000" step="5000" min="0"></label>
+      <div id="efBox"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 投資 ══════════ -->
+<section class="panel" id="p-inv">
+  <div class="sec">
+    <div class="sec-title">一塊錢該還債還是進場</div>
+    <div class="card">
+      <div class="hint" style="margin:0 0 12px">還掉一筆 r% 的貸款，等於拿到一個保證 r%、免稅、零波動的報酬。投資要贏過它，得先跨過這條線。</div>
+      <label class="fld"><span class="lb">你對台股長期年化報酬的預期<b id="expLb">7.0%</b></span>
+        <input type="range" id="exp" min="0" max="15" step="0.5" value="7"></label>
+      <svg id="hurdle" viewBox="0 0 400 150" style="width:100%" role="img" aria-label="各筆貸款利率與投資期望報酬比較"></svg>
+      <div id="hurdleNote"></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">閒錢分配建議</div>
+    <div class="card">
+      <label class="fld"><span class="lb">這個月多出來的錢<b id="freeLb">—</b></span><input type="number" id="free" value="10000" step="1000" min="0"></label>
+      <div id="allocBox"></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">槓桿疊加警示</div>
+    <div class="card">
+      <div class="flag f-alarm" style="margin-bottom:11px">
+        <span class="dot"></span>
+        <div><b>負債 + 槓桿 ETF = 兩層槓桿</b>
+        借 8.19% 的錢持有 2 倍槓桿標的，等於用 1.7 倍實質曝險去搏。單日 −5% 的大盤，會讓部位 −10%，而利息照樣計。</div>
+      </div>
+      <div class="hint" style="margin:0">
+        兩件常被忽略的機制：<br>
+        <b>① 波動耗損</b>：槓桿 ETF 每日重設倍數，盤整盤越震盪、長期越偏離 2 倍。大盤 −10% 再 +11.1% 回到原點，2 倍標的卻回不去。<br>
+        <b>② 無法追繳但會被時間追繳</b>：貸款不會斷頭，但每月 30,055 的還款壓力會逼你在最差的時點賣股變現，這是真正的風險。<br><br>
+        比較保守的做法是把「還款準備金」與「投資部位」實體分開兩個帳戶，讓帳面波動不會影響繳款能力。
+      </div>
+    </div>
+  </div>
+  <footer>本工具做的是數學，不是建議。實際決策請考量你的工作穩定度、家庭責任與風險承受度，必要時諮詢合格理財或債務顧問。</footer>
+</section>
+
+<!-- ══════════ 工程 ══════════ -->
+<section class="panel" id="p-eng">
+  <div class="sec">
+    <div class="sec-title">資料模型</div>
+    <div class="card"><pre><span class="c">-- 一筆貸款的最小可用欄位集</span>
+<span class="k">CREATE TABLE</span> loan (
+  id            TEXT PRIMARY KEY,
+  institution   TEXT,          <span class="c">-- 銀行代碼</span>
+  product_type  TEXT,          <span class="c">-- MORTGAGE|CREDIT|INSTALMENT</span>
+  principal     BIGINT,        <span class="c">-- 原始撥款</span>
+  balance       BIGINT,        <span class="c">-- 目前本金餘額</span>
+  apr_bp        INT,           <span class="c">-- 年利率 basis point，819 = 8.19%</span>
+  rate_type     TEXT,          <span class="c">-- FIXED|FLOAT</span>
+  term_total    INT,
+  term_paid     INT,
+  payment       BIGINT,
+  due_day       INT,
+  maturity_date DATE,
+  autopay_acct  TEXT,
+  synced_at     TIMESTAMPTZ
+);
+
+<span class="k">CREATE TABLE</span> loan_txn (
+  loan_id  TEXT REFERENCES loan(id),
+  posted   DATE,
+  kind     TEXT,   <span class="c">-- DISBURSE|REPAY|FEE|PREPAY</span>
+  amount   BIGINT,
+  balance_after BIGINT
+);</pre></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">API 介面</div>
+    <div class="card"><pre><span class="k">GET</span>  /v1/liabilities            <span class="c">→ 聚合四家銀行，回總覽</span>
+<span class="k">GET</span>  /v1/liabilities/{id}/schedule
+<span class="k">POST</span> /v1/simulations/payoff     <span class="c">→ {strategy, extra} 回瀑布</span>
+<span class="k">POST</span> /v1/simulations/prepay     <span class="c">→ {loanId, amount} 回省息</span>
+<span class="k">GET</span>  /v1/cashflow/月預算
+<span class="k">POST</span> /v1/budget/limits          <span class="c">→ 寫入分類上限</span>
+<span class="k">GET</span>  /v1/advisory/allocation    <span class="c">→ 還債 vs 投資拆分</span>
+<span class="k">GET</span>  /v1/alerts                 <span class="c">→ 規則引擎輸出</span></pre>
+    <div class="hint">聚合來源：財金公司開放銀行 TSP（<code>/loans</code> 需 Open Banking 第三階段授權）；未開放的銀行走 <code>行動 App 憑證代理</code> 或使用者自填。跨行資料以 <code>synced_at</code> 標記新鮮度，超過 72 小時的餘額在 UI 上打灰。</div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">規則引擎</div>
+    <div class="card"><pre><span class="c"># 每次同步後跑一輪，輸出 alerts</span>
+<span class="k">rule</span> HIGH_APR_OUTLIER:
+  when  loan.apr_bp &gt; weighted_avg_apr * 1.8
+  emit  ALARM "這筆利率明顯偏高，優先償還"
+
+<span class="k">rule</span> MATURITY_SHORTFALL:
+  when  loan.maturity_date - today &lt; 12 months
+        and remaining_payments * payment &lt; balance
+  emit  CAUTION "到期前現金流不足以清償，可能有尾款"
+
+<span class="k">rule</span> DSR_BREACH:
+  when  sum(loan.payment) / income &gt; 0.40
+  emit  ALARM "月付佔收入過高，新增負債前先降槓桿"
+
+<span class="k">rule</span> CASHFLOW_RELEASE:
+  when  any loan closes within 6 months
+  emit  INFO "釋出 {payment}/月，預設導向最高利率那筆"
+
+<span class="k">rule</span> AUTOPAY_COLLISION:
+  when  count(loan by autopay_acct, due_day) &gt; 1
+  emit  CAUTION "同帳戶同日多筆扣款，需以合併金額檢核餘額"
+  <span class="c"># 3362 + 3375 → 每月 14 日 21,874</span>
+
+<span class="k">rule</span> LEVERAGE_STACK:
+  when  holdings.has(leveraged_etf)
+        and total_debt &gt; 0
+  emit  ALARM "負債期間持有槓桿標的，實質曝險放大"</pre></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">排程與事件</div>
+    <div class="card">
+      <div class="hint" style="margin:0">
+      <b>D-5</b> 扣款日前五天核對綁定帳戶餘額，不足則推播 →<br>
+      <b>D-1</b> 二次提醒，並提供「立即轉入」深連結 →<br>
+      <b>D+1</b> 對帳：<code>loan_txn</code> 沒收到 REPAY 就標記為疑似未扣 →<br>
+      <b>每月 1 日</b> 重算預算基準與瀑布 →<br>
+      <b>利率變動事件</b>（FLOAT 型）觸發全站重算並保留前後對照。
+      </div>
+    </div>
+  </div>
+  <footer>原型：單檔 HTML，全部試算在前端完成，不上傳任何資料。</footer>
+</section>
+
+</main>
+
+<nav>
+  <button data-tab="p-home" aria-current="page"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>總覽</button>
+  <button data-tab="p-debt"><svg viewBox="0 0 24 24"><path d="M3 6h18v12H3z"/><path d="M3 10h18"/><circle cx="7.5" cy="14" r="1.2"/></svg>債務</button>
+  <button data-tab="p-flow"><svg viewBox="0 0 24 24"><path d="M4 18V9M10 18V5M16 18v-6M22 18h-20"/></svg>金流</button>
+  <button data-tab="p-inv"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 7v5h-5"/></svg>投資</button>
+  <button data-tab="p-eng"><svg viewBox="0 0 24 24"><path d="M8 6l-5 6 5 6M16 6l5 6-5 6"/></svg>工程</button>
+</nav>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════
+   1. 從三張截圖抽出的原始資料
+   ══════════════════════════════════════════════ */
+const LOANS = [
+  { id:'B', name:'分期信貸', bank:'數位銀行 · 2026/06/09 撥款',
+    balance:278486, rate:8.19, payment:3425, term:120, paid:2,
+    origin:280000, due:'09/09', maturity:'2036/06',
+    note:'撥款 277,112 + 開辦費 2,888，合約本金 280,000', color:'#B23A2E', known:true },
+  { id:'C', name:'小額信貸 3362', bank:'中國信託 · 2025/01/14 撥款',
+    balance:1123248, rate:2.500, payment:18220, term:84, paid:18,
+    origin:1396185, due:'08/14', maturity:'2032/01/14',
+    acct:'822-0000229540180164',
+    note:'原始金額 1,396,185，已還本金 272,937（19.5%）', color:'#0E7A5F', known:true },
+  { id:'A', name:'其他貸款', bank:'綠色銀行 · 到期 2027/03/20',
+    balance:75277, rate:1.695, payment:8410, due:'08/15',
+    paidRatio:24.72, maturity:'2027/03/20',
+    note:'已還款比率 24.72%，推估原始本金約 100,000', color:'#463B96', known:true },
+  { id:'D', name:'小額信貸 3375', bank:'中國信託 · 2025/01/14 撥款',
+    balance:225253, rate:2.500, payment:3654, term:84, paid:18,
+    origin:280000, due:'08/14', maturity:'2032/01/14',
+    acct:'822-0000229540180164',
+    note:'原始金額 280,000，已還本金 54,747（19.6%）', color:'#B07A0C', known:true }
+];
+
+const fmt = n => Math.round(n).toLocaleString('en-US');
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+
+/* ══════════════════════════════════════════════
+   2. 攤還核心
+   ══════════════════════════════════════════════ */
+function monthlyInterest(l){ return l.balance * l.rate/100/12; }
+
+function simulate(extra, strategy){
+  const ds = LOANS.map(l => ({id:l.id, bal:l.balance, rate:l.rate, payment:l.payment}));
+  const recycle = strategy !== 'none';
+  let month = 0, interest = 0;
+  const payoff = {};
+  while(ds.some(d=>d.bal>0.5) && month < 720){
+    month++;
+    let pool = recycle
+      ? extra + ds.filter(d=>d.bal<=0.5).reduce((s,d)=>s+d.payment,0)
+      : 0;
+    for(const d of ds){
+      if(d.bal<=0.5) continue;
+      const i = d.bal*d.rate/100/12;
+      interest += i;
+      const pay = Math.min(d.payment, d.bal+i);
+      d.bal = d.bal + i - pay;
+      if(d.bal<=0.5){ d.bal=0; payoff[d.id]=month; }
+    }
+    const live = ds.filter(d=>d.bal>0.5);
+    live.sort((a,b)=> strategy==='snowball' ? a.bal-b.bal : b.rate-a.rate);
+    for(const t of live){
+      if(pool<=0.5) break;
+      const p = Math.min(pool, t.bal);
+      t.bal -= p; pool -= p;
+      if(t.bal<=0.5){ t.bal=0; payoff[t.id]=month; }
+    }
+  }
+  return {months:month, interest, payoff};
+}
+
+const monthLabel = m => {
+  const d = new Date(2026, 7 + m - 1, 1);
+  return d.getFullYear() + '/' + String(d.getMonth()+1).padStart(2,'0');
+};
+
+/* ══════════════════════════════════════════════
+   3. 渲染
+   ══════════════════════════════════════════════ */
+function renderHeader(){
+  const total = LOANS.reduce((s,l)=>s+l.balance,0);
+  const pay   = LOANS.reduce((s,l)=>s+l.payment,0);
+  const intr  = LOANS.reduce((s,l)=>s+monthlyInterest(l),0);
+  $('#hTotal').textContent = fmt(total);
+  $('#hPay').textContent = fmt(pay);
+  $('#hInt').textContent = fmt(intr);
+  $('#hRate').textContent = (intr*12/total*100).toFixed(2)+'%';
+}
+
+function renderFlags(){
+  const A = LOANS.find(l=>l.id==='A');
+  const months = 8; // 2026/08/15 → 2027/03/15
+  const gap = A.balance - A.payment*months;
+  const total = LOANS.reduce((s,l)=>s+l.balance,0);
+  const intr  = LOANS.reduce((s,l)=>s+monthlyInterest(l),0);
+  const B = LOANS.find(l=>l.id==='B');
+  const ratio = (B.rate / (intr*12/total*100)).toFixed(1);
+
+  $('#flags').innerHTML = `
+  <div class="flag f-alarm"><span class="dot"></span><div>
+    <b>分期信貸 8.19%，是加權平均的 ${ratio} 倍</b>
+    它佔總負債 ${(B.balance/total*100).toFixed(0)}%，卻吃掉每月利息的 ${(monthlyInterest(B)/intr*100).toFixed(0)}%。其餘三筆都在 1.7–2.5%，這一筆是唯一貴的。多出來的每一塊錢，先往這裡放。
+  </div></div>
+  <div class="flag f-caution"><span class="dot"></span><div>
+    <b>其他貸款到期前可能差約 ${fmt(Math.max(gap,0))} 元</b>
+    餘額 ${fmt(A.balance)}，但到 2027/03 只剩 ${months} 期 × ${fmt(A.payment)} = ${fmt(A.payment*months)}。到期日可能有一筆尾款，值得打電話問清楚。這是四筆裡唯一資料兜不攏的。
+  </div></div>
+  <div class="flag f-jade"><span class="dot"></span><div>
+    <b>2027 年 3 月起，每月現金流回血 ${fmt(A.payment)}</b>
+    這筆錢原封不動轉去攻 8.19% 那筆，它會從 120 期縮到約 33 期。在「債務」頁把策略切成利率優先，額外投入拉到 ${fmt(A.payment)} 就看得到。
+  </div></div>`;
+}
+
+function renderCalendar(){
+  const rows = [
+    ['08/14','中信 3362','扣款 …0164',18220],
+    ['08/14','中信 3375','同一帳戶',3654],
+    ['08/15','其他貸款','綠色銀行',8410],
+    ['09/09','分期信貸','數位銀行',3425]
+  ];
+  const sum = rows.reduce((s,r)=>s+r[3],0);
+  $('#calTbl').innerHTML =
+    '<thead><tr><th>日期</th><th>項目</th><th>金額</th></tr></thead><tbody>' +
+    rows.map(r=>`<tr><td class="num">${r[0]}</td><td>${r[1]}<div style="font-size:10px;color:var(--muted)">${r[2]}</div></td><td class="num">${fmt(r[3])}</td></tr>`).join('') +
+    `<tr><td colspan="2"><b>合計</b></td><td class="num"><b>${fmt(sum)}</b></td></tr></tbody>` +
+    `<tr><td colspan="3" style="border:0;padding-top:9px"><div class="hint" style="margin:0">8/14 單日、單一帳戶需備妥 <b>21,874</b>，這是月內最大的一次扣款壓力點。</div></td></tr>`;
+}
+
+function renderDebtCards(){
+  const sorted = [...LOANS].sort((a,b)=>b.rate-a.rate);
+  const intrTotal = LOANS.reduce((s,l)=>s+monthlyInterest(l),0);
+  $('#debtCards').innerHTML = sorted.map(l=>{
+    const progress = l.term ? l.paid/l.term*100 : (l.paidRatio || 0);
+    const chipBg = l.rate>6 ? 'var(--alarm-soft);color:var(--alarm)'
+                 : l.rate>4 ? 'var(--caution-soft);color:var(--caution)'
+                 : 'var(--jade-soft);color:var(--jade)';
+    return `<div class="card debt">
+      <span class="stripe" style="background:${l.color}"></span>
+      <div class="debt-top">
+        <div>
+          <div class="debt-name">${l.name}</div>
+          <div class="debt-bank">${l.bank}</div>
+          <span class="rate-chip" style="background:${chipBg}">${l.rate.toFixed(l.rate<2?3:2)}%${l.known?'':' ·推估'}</span>
+        </div>
+        <div>
+          <div class="debt-bal">${fmt(l.balance)}</div>
+          <div class="debt-bank" style="text-align:right">月付 ${fmt(l.payment)}</div>
+        </div>
+      </div>
+      <div class="debt-rows">
+        <div class="kv"><div class="k">每月利息</div><div class="v">${fmt(monthlyInterest(l))}</div></div>
+        <div class="kv"><div class="k">佔總利息</div><div class="v">${(monthlyInterest(l)/intrTotal*100).toFixed(0)}%</div></div>
+        <div class="kv"><div class="k">${l.term?'期數':'還款進度'}</div><div class="v">${l.term? l.paid+' / '+l.term : (l.paidRatio? l.paidRatio+'%':'—')}</div></div>
+        <div class="kv"><div class="k">原始金額</div><div class="v">${l.origin?fmt(l.origin):'≈100,000'}</div></div>
+        <div class="kv"><div class="k">繳款日</div><div class="v">${l.due||'—'}</div></div>
+        <div class="kv"><div class="k">到期日</div><div class="v">${l.maturity||'—'}</div></div>
+      </div>
+      <div class="bar"><span style="width:${Math.min(progress,100)}%;background:${l.color}"></span></div>
+      ${l.note?`<div class="hint">${l.note}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function renderWaterfall(){
+  const strat = currentStrat, extra = +$('#extra').value;
+  const sim = simulate(extra, strat);
+  const maxM = Math.max(...Object.values(sim.payoff), 12);
+  const W=400, L=76, R=392, rowH=30, top=16;
+  const x = m => L + (R-L)*m/maxM;
+  const order = [...LOANS].sort((a,b)=>sim.payoff[a.id]-sim.payoff[b.id]);
+
+  let g = '';
+  // year gridlines
+  for(let y=0; y*12<=maxM; y++){
+    const px = x(y*12);
+    g += `<line x1="${px}" y1="${top-6}" x2="${px}" y2="${top+order.length*rowH+4}" stroke="#2A3944" stroke-width="1"/>`;
+    g += `<text x="${px}" y="${top+order.length*rowH+18}" fill="#6C8A85" font-size="8" font-family="IBM Plex Mono" text-anchor="middle">${2026+y}</text>`;
+  }
+  order.forEach((l,i)=>{
+    const y = top + i*rowH + 10;
+    const end = x(sim.payoff[l.id]);
+    g += `<text x="0" y="${y+3}" fill="#B9C7CD" font-size="9.5" font-family="Noto Sans TC">${l.name.replace('（','(').replace('）',')')}</text>`;
+    g += `<rect x="${L}" y="${y-6}" width="${end-L}" height="12" rx="3" fill="${l.color}" opacity=".9"/>`;
+    g += `<text x="${Math.min(end+5,368)}" y="${y+3.5}" fill="#7FBFA9" font-size="8.5" font-family="IBM Plex Mono">${monthLabel(sim.payoff[l.id])}</text>`;
+    // cascade arrow
+    if(i < order.length-1 && strat!=='none'){
+      const ny = top + (i+1)*rowH + 10;
+      g += `<path d="M${end} ${y+6} L${end} ${ny-8}" stroke="#7FBFA9" stroke-width="1" stroke-dasharray="2 2"/>`;
+      g += `<path d="M${end-3} ${ny-11} L${end} ${ny-7} L${end+3} ${ny-11}" fill="none" stroke="#7FBFA9" stroke-width="1"/>`;
+    }
+  });
+  $('#wfSvg').setAttribute('viewBox',`0 0 400 ${top+order.length*rowH+28}`);
+  $('#wfSvg').innerHTML = g;
+  $('#wfLegend').innerHTML = LOANS.map(l=>`<span><i style="background:${l.color}"></i>${l.name}</span>`).join('')
+    + `<span style="color:#7FBFA9">全部清償：${monthLabel(sim.months)}</span>`;
+}
+
+let currentStrat = 'none';
+function renderStrategy(){
+  const extra = +$('#extra').value;
+  $('#extraLb').textContent = fmt(extra);
+  const base = simulate(0,'none');
+  const now  = simulate(extra, currentStrat);
+  const saved = base.interest - now.interest;
+  const faster = base.months - now.months;
+
+  if(currentStrat==='none' && extra===0){
+    $('#saveInt').textContent = fmt(base.interest);
+    $('#saveCap').textContent = `維持現狀，到 ${monthLabel(base.months)} 全部還完，期間總利息 ${fmt(base.interest)} 元。改變策略後這裡會顯示省下多少。`;
+  } else {
+    $('#saveInt').textContent = '省 ' + fmt(saved);
+    $('#saveCap').innerHTML = `利息少付 <b>${fmt(saved)}</b> 元，提早 <b>${faster}</b> 個月無債（${monthLabel(now.months)}）。${extra>0?`每月多投入 ${fmt(extra)} 元，累計投入 ${fmt(extra*Math.min(now.months, base.months))} 元。`:'完全靠結清後的月付金再投入，不用多掏一毛。'}`;
+  }
+  $('#stratTbl').innerHTML =
+    '<thead><tr><th>貸款</th><th>維持現狀</th><th>此策略</th></tr></thead><tbody>' +
+    LOANS.map(l=>`<tr><td>${l.name}</td><td class="num" style="color:var(--muted)">${monthLabel(base.payoff[l.id])}</td><td class="num"><b>${monthLabel(now.payoff[l.id])}</b></td></tr>`).join('') +
+    '</tbody>';
+  renderWaterfall();
+}
+
+function renderDSR(){
+  const inc = +$('#income').value || 1;
+  $('#incLb').textContent = fmt(inc);
+  const pay = LOANS.reduce((s,l)=>s+l.payment,0);
+  const dsr = pay/inc*100;
+  const total = LOANS.reduce((s,l)=>s+l.balance,0);
+  const zone = dsr>40 ? ['f-alarm','偏高','超過 40% 的月付佔比，銀行審新案時多半會亮紅燈，你自己的緩衝也很薄。']
+             : dsr>30 ? ['f-caution','吃緊','30–40% 之間還撐得住，但沒有太多空間吸收失業或醫療這類突發事件。']
+             : ['f-jade','健康','月付佔比在 30% 以內，現金流有餘裕。'];
+  $('#dsrBox').innerHTML = `
+    <div class="debt-rows" style="border-top:1px dashed var(--line);padding-top:12px">
+      <div class="kv"><div class="k">月付佔收入 (DSR)</div><div class="v" style="font-size:20px">${dsr.toFixed(1)}%</div></div>
+      <div class="kv"><div class="k">負債 ÷ 年收入</div><div class="v" style="font-size:20px">${(total/(inc*12)).toFixed(2)} 倍</div></div>
+    </div>
+    <div class="bar" style="height:8px"><span style="width:${Math.min(dsr,100)}%;background:${dsr>40?'var(--alarm)':dsr>30?'var(--caution)':'var(--jade)'}"></span></div>
+    <div class="flag ${zone[0]}" style="margin-top:12px"><span class="dot"></span><div><b>${zone[1]}</b>${zone[2]}</div></div>`;
+  renderBudget();
+}
+
+function renderBudget(){
+  const inc = +$('#income').value || 0;
+  const debt = LOANS.reduce((s,l)=>s+l.payment,0);
+  const cc = +$('#cc').value||0, rent = +$('#rent').value||0, ins = +$('#ins').value||0;
+  $('#ccLb').textContent = fmt(cc); $('#rentLb').textContent = fmt(rent); $('#insLb').textContent = fmt(ins);
+  const fixed = debt + cc + rent + ins;
+  const left = inc - fixed;
+  const parts = [
+    ['貸款還款', debt, '#463B96'],
+    ['信用卡',   cc,   '#B23A2E'],
+    ['居住固定', rent, '#B07A0C'],
+    ['保險攤提', ins,  '#5A6B78'],
+    ['可支配',   Math.max(left,0), '#0E7A5F']
+  ];
+  const denom = Math.max(inc, fixed);
+  $('#budBars').innerHTML =
+    parts.map(p=>`<div class="bud"><div class="bud-row"><span>${p[0]}</span><b>${fmt(p[1])} · ${(p[1]/denom*100).toFixed(0)}%</b></div>
+      <div class="bud-track"><i style="width:${p[1]/denom*100}%;background:${p[2]}"></i></div></div>`).join('');
+  $('#budHint').innerHTML = left < 0
+    ? `<span style="color:var(--alarm)"><b>缺口 ${fmt(-left)} 元。</b>固定支出已經超過收入，這個月靠現金或循環信用補的話，等於用更高的利率借新還舊。優先處理順序是：先確認繳款不斷、再談降息或協商展期。</span>`
+    : `扣掉全部固定支出後剩 <b>${fmt(left)}</b> 元。在有債的階段，比較穩的分法是把它切成 <b>生活費 ${fmt(left*0.6)}</b>、<b>加速還款 ${fmt(left*0.25)}</b>、<b>緊急金 ${fmt(left*0.15)}</b>。`;
+
+  const days = 30;
+  const spend = Math.max(left,0)*0.6;
+  $('#daily').textContent = fmt(spend/days);
+  $('#dailyCap').innerHTML = left<=0
+    ? '固定支出已吃掉全部收入，目前沒有可設定的日花上限。'
+    : `每日餐飲娛樂購物的上限。超過連續三天，App 會在第四天早上把數字改成紅的，並自動下修剩餘天數的額度。`;
+  renderEF();
+}
+
+function renderEF(){
+  const cash = +$('#cash').value||0;
+  $('#cashLb').textContent = fmt(cash);
+  const inc = +$('#income').value||0;
+  const debt = LOANS.reduce((s,l)=>s+l.payment,0);
+  const cc = +$('#cc').value||0, rent = +$('#rent').value||0, ins = +$('#ins').value||0;
+  const burn = debt+cc+rent+ins+Math.max(inc-(debt+cc+rent+ins),0)*0.6;
+  const months = burn>0 ? cash/burn : 0;
+  const target = burn*6;
+  const ok = months>=6;
+  $('#efBox').innerHTML = `
+    <div class="debt-rows" style="border-top:1px dashed var(--line);padding-top:12px">
+      <div class="kv"><div class="k">可撐月數</div><div class="v" style="font-size:20px">${months.toFixed(1)} 個月</div></div>
+      <div class="kv"><div class="k">六個月目標</div><div class="v" style="font-size:20px">${fmt(target)}</div></div>
+    </div>
+    <div class="bar" style="height:8px"><span style="width:${Math.min(months/6*100,100)}%;background:${ok?'var(--jade)':months>=3?'var(--caution)':'var(--alarm)'}"></span></div>
+    <div class="hint">${ok
+      ? '預備金充足。在有貸款的情況下，這是讓你不必在市場低點賣股繳款的那道牆。'
+      : `距離目標還差 ${fmt(Math.max(target-cash,0))} 元。有貸款的人比沒貸款的人更需要這筆錢——因為繳款日不會因為你手頭緊就延後。`}</div>`;
+  renderAlloc();
+}
+
+function renderHurdle(){
+  const exp = +$('#exp').value;
+  $('#expLb').textContent = exp.toFixed(1)+'%';
+  const maxR = Math.max(exp, 9);
+  const W=400, L=88, R=380;
+  const x = r => L + (R-L)*r/maxR;
+  let g = `<line x1="${x(exp)}" y1="6" x2="${x(exp)}" y2="122" stroke="#463B96" stroke-width="1.5" stroke-dasharray="4 3"/>
+           <text x="${x(exp)}" y="136" fill="#463B96" font-size="9" font-family="IBM Plex Mono" text-anchor="middle">期望 ${exp.toFixed(1)}%</text>`;
+  const sorted=[...LOANS].sort((a,b)=>b.rate-a.rate);
+  sorted.forEach((l,i)=>{
+    const y=20+i*25;
+    const win = l.rate>exp;
+    g += `<text x="0" y="${y+3}" fill="#3D4A57" font-size="9.5" font-family="Noto Sans TC">${l.name.replace('（','(').replace('）',')')}</text>`;
+    g += `<rect x="${L}" y="${y-7}" width="${Math.max(x(l.rate)-L,2)}" height="14" rx="3" fill="${l.color}" opacity="${win?1:.35}"/>`;
+    g += `<text x="${x(l.rate)+6}" y="${y+3.5}" fill="#3D4A57" font-size="9" font-family="IBM Plex Mono">${l.rate.toFixed(2)}%</text>`;
+  });
+  $('#hurdle').innerHTML = g;
+  const above = LOANS.filter(l=>l.rate>exp);
+  const below = LOANS.filter(l=>l.rate<=exp);
+  $('#hurdleNote').innerHTML = `
+    <div class="flag ${above.length?'f-alarm':'f-jade'}" style="margin-top:10px"><span class="dot"></span><div>
+      <b>${above.length? '線的右邊：'+above.map(l=>l.name).join('、') : '沒有貸款超過期望報酬'}</b>
+      ${above.length
+        ? `這些貸款的利率高於你對股市的期望報酬。還掉它們是確定的 ${above[0].rate.toFixed(2)}%，投資賺 ${exp.toFixed(1)}% 只是期望值，還要扣稅、手續費與睡不著的成本。`
+        : `數學上投資的期望報酬高於所有借款成本。但期望值不等於保證，投資會有負報酬的年份，貸款利息不會有。`}
+    </div></div>
+    ${below.length?`<div class="flag f-jade" style="margin-top:8px"><span class="dot"></span><div>
+      <b>線的左邊：${below.map(l=>l.name).join('、')}</b>
+      ${below.map(l=>l.rate.toFixed(2)+'%').join(' / ')} 的資金成本很便宜，急著清掉它反而放棄了長期複利的機會。維持正常攤還即可。
+    </div></div>`:''}`;
+}
+
+function renderAlloc(){
+  const free = +$('#free').value||0;
+  $('#freeLb').textContent = fmt(free);
+  const exp = +$('#exp').value;
+  const cash = +$('#cash').value||0;
+  const inc = +$('#income').value||0;
+  const debt = LOANS.reduce((s,l)=>s+l.payment,0);
+  const cc=+$('#cc').value||0, rent=+$('#rent').value||0, ins=+$('#ins').value||0;
+  const burn = debt+cc+rent+ins;
+  const efShort = Math.max(burn*6 - cash, 0);
+  const hi = LOANS.filter(l=>l.rate>exp).sort((a,b)=>b.rate-a.rate);
+
+  let steps=[], rest=free;
+  if(efShort>0){ const a=Math.min(rest, free*0.4); steps.push(['補緊急預備金', a, `還差 ${fmt(efShort)}，這是第一順位。沒有它，任何一次意外都會變成新的高利貸款。`,'#5A6B78']); rest-=a; }
+  if(hi.length){ const a = rest*(efShort>0?1:0.7); steps.push([`加還 ${hi[0].name}`, a, `${hi[0].rate.toFixed(2)}% 的確定報酬，高於你設定的 ${exp.toFixed(1)}% 期望值。`, hi[0].color]); rest-=a; }
+  if(rest>0.5){ steps.push(['投入市場', rest, hi.length? '在高利貸款清掉前，投資部位建議以不加槓桿的分散標的為主，避免波動逼你在低點變現繳款。' : '所有借款成本都低於期望報酬，這部分可以正常投資。','#0E7A5F']); }
+
+  $('#allocBox').innerHTML = steps.map((s,i)=>`
+    <div style="display:flex;gap:11px;padding:11px 0;${i?'border-top:1px dashed var(--line)':''}">
+      <div style="width:4px;border-radius:2px;background:${s[3]};flex:none"></div>
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <b style="font-size:13.5px">${s[0]}</b>
+          <span style="font-family:var(--mono);font-weight:600;font-size:15px">${fmt(s[1])}</span>
+        </div>
+        <div class="hint" style="margin-top:3px">${s[2]}</div>
+      </div>
+    </div>`).join('') || '<div class="hint">沒有可分配的餘額。</div>';
+}
+
+/* ══════════════════════════════════════════════
+   4. 事件綁定
+   ══════════════════════════════════════════════ */
+$$('nav button').forEach(b=>b.onclick=()=>{
+  $$('nav button').forEach(x=>x.removeAttribute('aria-current'));
+  b.setAttribute('aria-current','page');
+  $$('.panel').forEach(p=>p.classList.remove('on'));
+  $('#'+b.dataset.tab).classList.add('on');
+  document.querySelector('main').scrollTop=0;
+});
+$$('.seg button').forEach(b=>b.onclick=()=>{
+  $$('.seg button').forEach(x=>x.setAttribute('aria-pressed','false'));
+  b.setAttribute('aria-pressed','true');
+  currentStrat=b.dataset.strat;
+  renderStrategy();
+});
+$('#extra').oninput = renderStrategy;
+$('#income').oninput = ()=>{ renderDSR(); };
+['#cc','#rent','#ins'].forEach(s=>$(s).oninput = renderBudget);
+$('#cash').oninput = renderEF;
+$('#free').oninput = renderAlloc;
+$('#exp').oninput = ()=>{ renderHurdle(); renderAlloc(); };
+
+
+/* ══════════════════════════════════════════════
+   5. 啟動
+   ══════════════════════════════════════════════ */
+renderHeader(); renderFlags(); renderCalendar(); renderDebtCards();
+renderStrategy(); renderDSR(); renderHurdle();
+</script>
+
+<div id="updateBar" role="status" aria-live="polite">
+  <p><b>有新版本</b><span id="updateMsg">下次開啟時會自動套用，也可以現在更新。</span></p>
+  <button id="updateNow">立即更新</button>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════
+   PWA：註冊 service worker 與自動更新
+   ══════════════════════════════════════════════
+   更新策略
+   - 每次進到前景、以及每小時，主動向伺服器問一次有沒有新版
+   - 抓到新版時不會當場重整（避免打斷正在輸入的欄位），
+     而是顯示提示；使用者可立即套用，否則下次回到前景時自動套用
+*/
+(() => {
+  const BUILD = '__BUILD_VERSION__';
+  const bar = document.getElementById('updateBar');
+  const btn = document.getElementById('updateNow');
+  const msg = document.getElementById('updateMsg');
+
+  // 顯示目前版本（每頁底部）
+  const stamp = (v, t) => {
+    document.querySelectorAll('footer').forEach(f => {
+      if (f.querySelector('.build')) return;
+      const s = document.createElement('div');
+      s.className = 'build';
+      s.style.marginTop = '6px';
+      s.textContent = `build ${v}${t ? ' · ' + t.slice(0, 10) : ''}`;
+      f.appendChild(s);
+    });
+  };
+  stamp(BUILD.startsWith('__') ? 'dev' : BUILD);
+
+  fetch('./version.json', { cache: 'no-store' })
+    .then(r => r.ok ? r.json() : null)
+    .then(d => { if (d) { document.querySelectorAll('.build').forEach(e => e.remove()); stamp(d.version, d.builtAt); } })
+    .catch(() => {});
+
+  if (!('serviceWorker' in navigator)) return;
+
+  let waiting = null;        // 已下載完、等著接手的新版
+  let reloading = false;
+
+  const offerUpdate = worker => {
+    waiting = worker;
+    bar.classList.add('show');
+  };
+
+  const applyUpdate = () => {
+    if (!waiting || reloading) return;
+    reloading = true;
+    msg.textContent = '正在套用…';
+    btn.disabled = true;
+    waiting.postMessage('SKIP_WAITING');
+  };
+
+  btn.addEventListener('click', applyUpdate);
+
+  // 只有在「我們主動要求套用」時才重整。
+  // 首次安裝時 clients.claim() 也會觸發這個事件，那時不該重整。
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloading) location.reload();
+  });
+
+  navigator.serviceWorker.register('./sw.js', { scope: './' }).then(reg => {
+
+    // 首次安裝完成、且頁面原本就受控 → 表示這是「更新」而非「初次安裝」
+    if (reg.waiting && navigator.serviceWorker.controller) offerUpdate(reg.waiting);
+
+    reg.addEventListener('updatefound', () => {
+      const nw = reg.installing;
+      if (!nw) return;
+      nw.addEventListener('statechange', () => {
+        if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+          offerUpdate(nw);
+        }
+      });
+    });
+
+    const checkForUpdate = () => reg.update().catch(() => {});
+
+    // 回到前景時：先套用上次已備妥的更新，再去問有沒有更新的
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible') return;
+      if (waiting) { applyUpdate(); return; }
+      checkForUpdate();
+    });
+
+    window.addEventListener('online', checkForUpdate);
+    setInterval(checkForUpdate, 60 * 60 * 1000);
+    checkForUpdate();
+  }).catch(err => console.warn('SW 註冊失敗：', err));
+})();
+</script>
+</body>
+</html>

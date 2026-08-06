@@ -1,2 +1,121 @@
-# Money-
-錢
+# 債務儀表 FinGuard
+
+個人負債、金流與預算的單一儀表板，做成可裝到 iOS 主畫面的 PWA。
+所有試算都在裝置上完成，沒有後端，不上傳任何資料。
+
+---
+
+## 一次性設定
+
+### 1. 建立 repo 並推上去
+
+```bash
+git init
+git add .
+git commit -m "FinGuard PWA"
+git branch -M main
+git remote add origin https://github.com/<你的帳號>/finguard.git
+git push -u origin main
+```
+
+Repo 設成 **Public**（免費方案的 GitHub Pages 只支援公開 repo）。
+裡面沒有任何個人識別資料，但貸款金額是真實的——若不想公開，需要 GitHub Pro。
+
+### 2. 打開 Pages
+
+Repo → **Settings** → **Pages** → Source 選 **GitHub Actions**（不是 Deploy from a branch）。
+
+推上去後 Actions 會自動跑，約一分鐘。網址會是：
+
+```
+https://<你的帳號>.github.io/finguard/
+```
+
+### 3. 裝到 iPhone 主畫面
+
+用 **Safari** 開上面的網址 → 分享鈕 → **加入主畫面**。
+
+裝完會有自己的圖示、全螢幕、沒有網址列。第一次開啟後即可離線使用。
+
+> 必須用 Safari 加入。其他瀏覽器加的捷徑不會套用 manifest，開起來仍是網頁樣子。
+
+---
+
+## 自動更新怎麼運作
+
+之後你只要 `git push`，手機上的 App 就會自己更新，不用重裝。
+
+機制分三層：
+
+| 層 | 做什麼 |
+|---|---|
+| **CI** | `deploy.yml` 把 commit SHA 寫進 `sw.js` 的快取名稱和 `version.json`。每次 push 都是新的快取名，瀏覽器不可能繼續沿用舊版。 |
+| **Service Worker** | 導覽請求走 network-first，有網路時新的 `index.html` 一定勝出；靜態檔走 stale-while-revalidate；字型另存在不隨版本清除的快取，避免更新時字體閃動。 |
+| **頁面** | 每次回到前景、每小時、以及重新連上網路時各檢查一次。抓到新版**不會當場重整**，而是跳出提示；你可以立刻套用，不理它的話下次回到前景時自動套用。 |
+
+不當場重整是刻意的——你可能正在輸入月收入或拖預算滑桿，畫面突然重載會很煩。
+
+每頁最底下會顯示 `build xxxxxxx`，可以用它確認手機上跑的是哪一版。
+
+### 手動強制更新
+
+若要驗證更新流程：把 App 切到背景再切回來，提示應該會出現。
+真的卡住的話，iOS：設定 → Safari → 清除瀏覽紀錄與網站資料，然後重開 App。
+
+---
+
+## 檔案結構
+
+```
+.
+├── index.html                  # 整個 App（HTML/CSS/JS 單檔）
+├── manifest.webmanifest        # PWA 設定：名稱、圖示、standalone
+├── sw.js                       # Service worker，版本化快取
+├── version.json                # CI 產生，供頁面顯示與比對版本
+├── icons/                      # 180/192/512 + maskable
+├── tools/make_icons.py         # 重新產生圖示用
+├── .nojekyll                   # 讓 Pages 不要跑 Jekyll
+└── .github/workflows/deploy.yml
+```
+
+---
+
+## 本機預覽
+
+Service worker 需要 HTTPS 或 localhost，直接開檔案（`file://`）不會生效。
+
+```bash
+python3 -m http.server 8000
+# 開 http://localhost:8000
+```
+
+本機跑的時候版本會顯示 `dev`，因為佔位字串只有 CI 會替換。
+
+---
+
+## 改資料
+
+貸款資料在 `index.html` 的 `LOANS` 陣列，就在 `<script>` 開頭。
+改完 `git push`，手機上下次開啟就會是新的。
+
+```js
+const LOANS = [
+  { id:'B', name:'分期信貸', bank:'…',
+    balance:278486, rate:8.19, payment:3425, term:120, paid:2, … },
+  …
+];
+```
+
+`balance` 建議每月對帳日更新一次，其餘欄位只有在合約變動時才需要動。
+
+---
+
+## 待辦
+
+- [ ] 接上信用卡消費明細 CSV，補上「每月必要 / 臨時 / 分期」三類支出
+- [ ] 把卡片分期併入還款瀑布（目前只有四筆銀行貸款）
+- [ ] 其他貸款 2027/03 到期尾款金額，待跟銀行確認
+
+---
+
+本工具做的是數學，不是理財建議。
