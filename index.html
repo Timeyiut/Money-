@@ -184,27 +184,6 @@ nav button svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width
   stroke-linecap:round;stroke-linejoin:round}
 nav button[aria-current=page]{color:var(--jade)}
 footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;text-align:center}
-
-/* update toast */
-#updateBar{
-  position:fixed;left:50%;transform:translate3d(-50%,140%,0);
-  -webkit-transform:translate3d(-50%,140%,0);
-  will-change:transform;
-  bottom:calc(78px + env(safe-area-inset-bottom));
-  width:min(420px,calc(100% - 28px));z-index:50;
-  background:#0F1720;color:#fff;border-radius:13px;
-  padding:13px 14px;display:flex;align-items:center;gap:12px;
-  box-shadow:0 10px 30px rgba(15,23,32,.35);
-  transition:transform .32s cubic-bezier(.2,.8,.3,1);
-}
-#updateBar.show{transform:translate3d(-50%,0,0);-webkit-transform:translate3d(-50%,0,0)}
-#updateBar p{flex:1;font-size:12.5px;line-height:1.55}
-#updateBar p b{display:block;font-size:13.5px;margin-bottom:1px}
-#updateBar button{
-  border:0;border-radius:8px;padding:9px 14px;cursor:pointer;
-  background:#7FBFA9;color:#0F1720;font-family:var(--sans);
-  font-size:12.5px;font-weight:700;flex:none;
-}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -923,20 +902,12 @@ renderHeader(); renderFlags(); renderCalendar(); renderDebtCards();
 renderStrategy(); renderDSR(); renderHurdle();
 </script>
 
-<div id="updateBar" role="status" aria-live="polite">
-  <p><b>有新版本</b><span id="updateMsg">下次開啟時會自動套用，也可以現在更新。</span></p>
-  <button id="updateNow">立即更新</button>
-</div>
-
 <script>
 /* ══════════════════════════════════════════════
    PWA：註冊 service worker 與自動更新
    ══════════════════════════════════════════════ */
 (() => {
   const BUILD = '__BUILD_VERSION__';
-  const bar = document.getElementById('updateBar');
-  const btn = document.getElementById('updateNow');
-  const msg = document.getElementById('updateMsg');
 
   const stamp = (v, t) => {
     document.querySelectorAll('footer').forEach(f => {
@@ -957,44 +928,23 @@ renderStrategy(); renderDSR(); renderHurdle();
 
   if (!('serviceWorker' in navigator)) return;
 
-  let waiting = null;
-  let reloading = false;
-
-  const offerUpdate = worker => {
-    waiting = worker;
-    bar.classList.add('show');
-  };
-
-  const applyUpdate = () => {
-    bar.classList.remove('show');
-    btn.disabled = true;
-    if (reloading) return;
-    reloading = true;
-
-    navigator.serviceWorker.getRegistration('./').then(reg => {
-      const w = reg && reg.waiting;
-      if (w) w.postMessage('SKIP_WAITING');
-    }).catch(() => {});
-
-    setTimeout(() => location.reload(), 350);
-  };
-
-  btn.addEventListener('click', applyUpdate);
-
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (reloading) location.reload();
-  });
+  // 完全背景更新，沒有任何畫面提示，也不會在使用中途強制重整。
+  // 導覽請求本身是 network-first（見 sw.js），所以當下這個分頁看到
+  // 的內容已經是最新的；這裡的 skipWaiting 只是讓「離線快取」提早
+  // 換成新版，下次重新開啟 App 時就會是完整的新版本，不需要使用者
+  // 做任何事。
+  const takeOverSilently = worker => worker.postMessage('SKIP_WAITING');
 
   navigator.serviceWorker.register('./sw.js', { scope: './' }).then(reg => {
 
-    if (reg.waiting && navigator.serviceWorker.controller) offerUpdate(reg.waiting);
+    if (reg.waiting && navigator.serviceWorker.controller) takeOverSilently(reg.waiting);
 
     reg.addEventListener('updatefound', () => {
       const nw = reg.installing;
       if (!nw) return;
       nw.addEventListener('statechange', () => {
         if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-          offerUpdate(nw);
+          takeOverSilently(nw);
         }
       });
     });
@@ -1002,9 +952,7 @@ renderStrategy(); renderDSR(); renderHurdle();
     const checkForUpdate = () => reg.update().catch(() => {});
 
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState !== 'visible') return;
-      if (waiting) { applyUpdate(); return; }
-      checkForUpdate();
+      if (document.visibilityState === 'visible') checkForUpdate();
     });
 
     window.addEventListener('online', checkForUpdate);
