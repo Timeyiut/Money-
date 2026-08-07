@@ -45,6 +45,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "chore: update bank statement data [skip ci]"
+            git commit -m "chore: update bank statement data"
             git push
           fi
