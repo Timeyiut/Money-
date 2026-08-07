@@ -315,14 +315,14 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
     <div class="sec-title">信用卡・依實際帳單資料</div>
     <div class="card">
       <div class="hint" style="margin:0 0 12px">
-      三張卡的通知信只有永豐把金額寫在信件本文裡，星展、台新的金額鎖在加密 PDF 附件中，暫時抓不到，需你自行輸入。
+      信箱裡能解出金額的卡會自動帶入最新一期「本期應繳」；解不出來的維持手動輸入，之後解得出來會自動接上。
       </div>
-      <label class="fld"><span class="lb">永豐銀行・近期繳款（信箱資料）<b id="ccSinoLb">7,600</b></span>
+      <label class="fld"><span class="lb">永豐銀行<span id="ccSinoHint">・近期繳款（信箱資料）</span><b id="ccSinoLb">7,600</b></span>
         <input type="number" id="ccSino" value="7600" step="100" min="0"></label>
       <div class="hint" style="margin:0 0 13px">近 12 個月實際繳款：26,837 / 69 / 19,011 / 510 / 14,583 / 4,154 / 7,600 元，波動很大，代表消費以臨時性居多，不是穩定月租型。</div>
-      <label class="fld"><span class="lb">星展銀行・待你輸入（帳單約每月 23 日產製）<b id="ccDbsLb">0</b></span>
+      <label class="fld"><span class="lb">星展銀行<span id="ccDbsHint">・待你輸入（帳單約每月 23 日產製）</span><b id="ccDbsLb">0</b></span>
         <input type="number" id="ccDbs" value="0" step="500" min="0" placeholder="從 DBS Card+ App 查當期應繳"></label>
-      <label class="fld" style="margin-bottom:0"><span class="lb">台新銀行・待你輸入（結帳週期每月 17 日）<b id="ccTsLb">0</b></span>
+      <label class="fld" style="margin-bottom:0"><span class="lb">台新銀行<span id="ccTsHint">・待你輸入（結帳週期每月 17 日）</span><b id="ccTsLb">0</b></span>
         <input type="number" id="ccTs" value="0" step="500" min="0" placeholder="從 Richart Life App 查當期應繳"></label>
     </div>
   </div>
@@ -339,7 +339,7 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
     <div class="sec-title">永豐卡・信箱抓到的實際繳款趨勢</div>
     <div class="card">
       <svg id="sinoTrend" viewBox="0 0 400 110" style="width:100%" role="img" aria-label="永豐信用卡近12個月繳款趨勢"></svg>
-      <div class="hint" style="margin-top:8px">這是唯一有真實信箱資料佐證的一張卡。振幅從 41 元到 26,837 元，代表這張卡上的消費以臨時性、非固定支出為主——正好呼應「每月必要／臨時」該分開看的理由。星展、台新無法從信件內容取得金額，需自行查詢補上。</div>
+      <div class="hint" style="margin-top:8px">振幅從 41 元到 26,837 元，代表這張卡上的消費以臨時性、非固定支出為主——正好呼應「每月必要／臨時」該分開看的理由。星展現在也能從信件內容自動帶入；台新目前仍抓不到金額，需自行查詢補上。</div>
     </div>
   </div>
 
@@ -670,11 +670,37 @@ function renderStatements(rows){
   }).join('');
 }
 
+const CC_BANK_RULES = [
+  {input:'ccSino', hint:'ccSinoHint', match: r => /信用卡/.test(r.subject||'') && /banksinopac/.test(r.from||'')},
+  {input:'ccDbs',  hint:'ccDbsHint',  match: r => /信用卡/.test(r.subject||'') && /dbs\.com/.test(r.from||'')},
+  {input:'ccTs',   hint:'ccTsHint',   match: r => /信用卡/.test(r.subject||'') && /taishinbank/.test(r.from||'')},
+];
+
+function applyStatementDefaults(rows){
+  if(!rows || !rows.length) return;
+  CC_BANK_RULES.forEach(rule=>{
+    const candidates = rows
+      .filter(r => rule.match(r) && r.amount)
+      .sort((a,b)=> new Date(b.date) - new Date(a.date));
+    const latest = candidates[0];
+    if(!latest) return;
+    const amount = +String(latest.amount).replace(/,/g,'');
+    if(!Number.isFinite(amount)) return;
+    const input = $('#'+rule.input);
+    if(input) input.value = amount;
+    const hint = $('#'+rule.hint);
+    if(hint) hint.textContent = '・近期繳款（信箱資料）';
+  });
+  renderBudget();
+}
+
 async function loadStatements(){
   try{
     const res = await fetch('./data/statements.json', {cache:'no-store'});
     if(!res.ok) return;
-    renderStatements(await res.json());
+    const rows = await res.json();
+    renderStatements(rows);
+    applyStatementDefaults(rows);
   }catch(e){ /* offline or first load before CI has run once */ }
 }
 
