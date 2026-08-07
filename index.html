@@ -233,6 +233,16 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
 
 <!-- ══════════ 債務 ══════════ -->
 <section class="panel" id="p-debt">
+  <div class="sec" id="secStatements" style="display:none">
+    <div class="sec-title">信箱自動擷取的帳單（待核對）</div>
+    <div class="card">
+      <div class="hint" style="margin:0 0 10px">
+      每月從信箱抓到、已解密讀出的帳單金額，僅供比對——不會自動改掉下面的餘額，確認無誤後自己更新 <code>LOANS</code>。
+      </div>
+      <div id="statementRows"></div>
+    </div>
+  </div>
+
   <div class="sec">
     <div class="sec-title">四筆貸款・依利率由高至低</div>
     <div id="debtCards"></div>
@@ -648,6 +658,26 @@ function renderDebtCards(){
   }).join('');
 }
 
+function renderStatements(rows){
+  if(!rows || !rows.length){ return; }
+  $('#secStatements').style.display = '';
+  $('#statementRows').innerHTML = [...rows].reverse().slice(0,10).map(r=>{
+    const amount = r.amount ? `$${r.amount}` : (r.unlocked ? '（找不到金額，需人工看信）' : '（解密失敗，需人工看信）');
+    return `<div class="kv" style="margin-bottom:10px">
+      <div class="k">${r.date||''} · ${r.from||''}</div>
+      <div class="v">${r.subject||r.attachment||''} — ${amount}</div>
+    </div>`;
+  }).join('');
+}
+
+async function loadStatements(){
+  try{
+    const res = await fetch('./data/statements.json', {cache:'no-store'});
+    if(!res.ok) return;
+    renderStatements(await res.json());
+  }catch(e){ /* offline or first load before CI has run once */ }
+}
+
 function renderWaterfall(){
   const strat = currentStrat, extra = +$('#extra').value;
   const sim = simulate(extra, strat);
@@ -905,6 +935,7 @@ $('#exp').oninput = ()=>{ renderHurdle(); renderAlloc(); };
    ══════════════════════════════════════════════ */
 renderHeader(); renderFlags(); renderCalendar(); renderDebtCards();
 renderStrategy(); renderDSR(); renderHurdle();
+loadStatements();
 </script>
 
 <script>

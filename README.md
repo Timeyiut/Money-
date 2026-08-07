@@ -74,8 +74,13 @@ https://<你的帳號>.github.io/finguard/
 ├── version.json                # CI 產生，供頁面顯示與比對版本
 ├── icons/                      # 180/192/512 + maskable
 ├── tools/make_icons.py         # 重新產生圖示用
+├── tools/gmail_oauth_setup.py  # 一次性本機授權，換 Gmail refresh token
+├── tools/fetch_bank_statements.py  # CI 用：抓信、解密 PDF、擷取金額
+├── data/statements.json        # CI 產生，自動擷取的帳單記錄
 ├── .nojekyll                   # 讓 Pages 不要跑 Jekyll
-└── .github/workflows/deploy.yml
+└── .github/workflows/
+    ├── static.yml
+    └── fetch-bank-statements.yml   # 每月自動抓帳單信
 ```
 
 ---
@@ -110,11 +115,41 @@ const LOANS = [
 
 ---
 
+## 自動抓信箱裡的月帳單（選用）
+
+`.github/workflows/fetch-bank-statements.yml` 每月跑一次（可在 Actions 頁手動觸發），用 Gmail API 搜尋帳單信、下載 PDF 附件，遇到有密碼保護的檔案會用身分證字號／生日的常見組合嘗試解鎖，讀出金額後寫進 `data/statements.json`。首頁「負債」分頁會多一塊「信箱自動擷取的帳單」卡片顯示這些資料，**但不會自動覆蓋 `LOANS` 陣列**——金額對不對還是要你自己看過才手動改，避免抓錯或解析錯誤直接污染你的帳。
+
+這個功能完全不影響本工具「無後端、不上傳資料」的原則：解密只發生在 GitHub 自己的 Actions 執行環境裡，PDF 原始內容和解密後全文都不會寫進 repo，只有比對用的日期/主旨/金額幾個欄位會進 `data/statements.json`。
+
+### 設定步驟
+
+1. **建立 Gmail API 用戶端**：到 [Google Cloud Console](https://console.cloud.google.com/apis/credentials) 建一個 OAuth Client ID（類型選「桌面應用程式」），拿到 `Client ID` 和 `Client Secret`。
+2. **在自己的電腦上**（不是 CI）跑一次授權，拿 refresh token：
+   ```bash
+   pip install -r tools/requirements.txt
+   python3 tools/gmail_oauth_setup.py --client-id "..." --client-secret "..."
+   ```
+   會開瀏覽器登入你的 Gmail 並要求唯讀權限，完成後終端機會印出 refresh token。
+3. **在 repo 加 Secrets**（Settings → Secrets and variables → Actions）：
+
+   | Secret | 說明 |
+   |---|---|
+   | `GMAIL_CLIENT_ID` | 步驟 1 拿到的 Client ID |
+   | `GMAIL_CLIENT_SECRET` | 步驟 1 拿到的 Client Secret |
+   | `GMAIL_REFRESH_TOKEN` | 步驟 2 印出的 refresh token |
+   | `BANK_ID_NUMBER` | 身分證字號，例如 `A123456789` |
+   | `BANK_BIRTHDAY` | 生日，格式 `YYYY-MM-DD` |
+
+4. 存完 secrets 後到 Actions 頁手動跑一次 `Fetch bank e-statements` 確認能正常抓到、解密成功。
+
+> 身分證字號和生日只存在 GitHub Actions 的加密 secrets 裡，永遠不會出現在程式碼、commit 或 `data/statements.json` 裡。如果不想用這個功能，不加這些 secrets 即可——workflow 沒有 secrets 會直接失敗，不影響其他功能。
+
 ## 待辦
 
 - [ ] 接上信用卡消費明細 CSV，補上「每月必要 / 臨時 / 分期」三類支出
 - [ ] 把卡片分期併入還款瀑布（目前只有四筆銀行貸款）
 - [ ] 其他貸款 2027/03 到期尾款金額，待跟銀行確認
+- [ ] 依各家銀行 PDF 實際格式調整 `tools/fetch_bank_statements.py` 的金額擷取規則（目前是通用關鍵字比對）
 
 ---
 

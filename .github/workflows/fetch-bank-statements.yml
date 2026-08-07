@@ -1,0 +1,50 @@
+name: Fetch bank e-statements
+
+on:
+  schedule:
+    # 01:00 UTC on the 3rd of every month = 09:00 Asia/Taipei
+    - cron: "0 1 3 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fetch-bank-statements
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r tools/requirements.txt
+
+      - name: Fetch statements
+        env:
+          GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
+          GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
+          GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
+          BANK_ID_NUMBER: ${{ secrets.BANK_ID_NUMBER }}
+          BANK_BIRTHDAY: ${{ secrets.BANK_BIRTHDAY }}
+        run: python3 tools/fetch_bank_statements.py
+
+      - name: Commit updated data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/statements.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: update bank statement data [skip ci]"
+            git push
+          fi
