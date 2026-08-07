@@ -50,32 +50,42 @@ BALANCE_PATTERNS = [
 
 def build_password_candidates(id_number: str, birthday: str) -> list[str]:
     """PDF-password conventions used by the banks that actually send to this
-    inbox, built from ID number + birthday (YYYY-MM-DD). Tried in order until
-    one unlocks the file.
+    inbox, built from ID number + birthday. Tried in order until one unlocks
+    the file.
 
     The rules are stated in the statement emails themselves:
       華南/永豐/國泰/王道/土銀/兆豐  full ID number, uppercase
       台新信用卡                     last 2 of ID + MMDD  (6 chars)
       星展信用卡                     last 4 of ID + MMDD  (8 chars)
+
+    None of those need a birth year, so BANK_BIRTHDAY accepts either just
+    "MM-DD" / "MMDD", or a full "YYYY-MM-DD" if you'd rather also try the
+    year-based formats some other banks use (kept below as a fallback).
     """
     id_number = id_number.strip().upper()
-    y, m, d = (int(p) for p in birthday.split("-"))
-    yyyymmdd = f"{y:04d}{m:02d}{d:02d}"
-    yymmdd = f"{y % 100:02d}{m:02d}{d:02d}"
-    roc_yyymmdd = f"{y - 1911:03d}{m:02d}{d:02d}"
+    digits = re.sub(r"\D", "", birthday)
+    if len(digits) == 4:  # MM-DD or MMDD, no year supplied
+        y = None
+        m, d = int(digits[:2]), int(digits[2:])
+    else:  # YYYY-MM-DD or YYYYMMDD
+        y, m, d = int(digits[:-4]), int(digits[-4:-2]), int(digits[-2:])
     mmdd = f"{m:02d}{d:02d}"
 
     candidates = [
         id_number,
         id_number[-2:] + mmdd,
         id_number[-4:] + mmdd,
-        yyyymmdd,
-        id_number + yyyymmdd,
         id_number + mmdd,
-        yymmdd,
-        roc_yyymmdd,
-        id_number + roc_yyymmdd,
     ]
+    if y is not None:
+        yyyymmdd = f"{y:04d}{mmdd}"
+        candidates += [
+            yyyymmdd,
+            id_number + yyyymmdd,
+            f"{y % 100:02d}{mmdd}",
+            f"{y - 1911:03d}{mmdd}",
+            id_number + f"{y - 1911:03d}{mmdd}",
+        ]
     # de-dupe while preserving order
     seen = set()
     result = []

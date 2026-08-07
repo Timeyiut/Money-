@@ -138,7 +138,7 @@ const LOANS = [
    | `GMAIL_CLIENT_SECRET` | 步驟 1 拿到的 Client Secret |
    | `GMAIL_REFRESH_TOKEN` | 步驟 2 印出的 refresh token |
    | `BANK_ID_NUMBER` | 身分證字號，例如 `A123456789` |
-   | `BANK_BIRTHDAY` | 生日，格式 `YYYY-MM-DD` |
+   | `BANK_BIRTHDAY` | 生日，`MM-DD` 即可（例如 `06-25`），不用填年份——目前信箱裡所有銀行的密碼規則都用不到出生年。要填完整 `YYYY-MM-DD` 也可以，程式會多嘗試幾組含年份的組合當後備。 |
 
 4. 存完 secrets 後到 Actions 頁手動跑一次 `Fetch bank e-statements` 確認能正常抓到、解密成功。
 
