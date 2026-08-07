@@ -37,8 +37,8 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
 DEFAULT_QUERY = (
-    '(subject:(對帳單 OR 帳單 OR 月結 OR 月結單 OR statement OR e-statement) '
-    'has:attachment filename:pdf) newer_than:45d'
+    '(subject:(對帳單 OR 帳單 OR 月結 OR 月結單 OR 交易明細 OR statement OR e-statement) '
+    'has:attachment filename:pdf) -subject:消費通知 newer_than:45d'
 )
 
 BALANCE_PATTERNS = [
@@ -49,21 +49,28 @@ BALANCE_PATTERNS = [
 
 
 def build_password_candidates(id_number: str, birthday: str) -> list[str]:
-    """Common Taiwan bank PDF-password conventions built from ID number +
-    birthday (YYYY-MM-DD). Tried in order until one unlocks the file."""
+    """PDF-password conventions used by the banks that actually send to this
+    inbox, built from ID number + birthday (YYYY-MM-DD). Tried in order until
+    one unlocks the file.
+
+    The rules are stated in the statement emails themselves:
+      華南/永豐/國泰/王道/土銀/兆豐  full ID number, uppercase
+      台新信用卡                     last 2 of ID + MMDD  (6 chars)
+      星展信用卡                     last 4 of ID + MMDD  (8 chars)
+    """
     id_number = id_number.strip().upper()
     y, m, d = (int(p) for p in birthday.split("-"))
     yyyymmdd = f"{y:04d}{m:02d}{d:02d}"
     yymmdd = f"{y % 100:02d}{m:02d}{d:02d}"
-    roc_year = y - 1911
-    roc_yyymmdd = f"{roc_year:03d}{m:02d}{d:02d}"
+    roc_yyymmdd = f"{y - 1911:03d}{m:02d}{d:02d}"
     mmdd = f"{m:02d}{d:02d}"
 
     candidates = [
         id_number,
+        id_number[-2:] + mmdd,
+        id_number[-4:] + mmdd,
         yyyymmdd,
         id_number + yyyymmdd,
-        id_number[:4] + yyyymmdd,
         id_number + mmdd,
         yymmdd,
         roc_yyymmdd,
