@@ -393,7 +393,7 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
       <label class="fld" style="margin-bottom:0"><span class="lb">費用率權重<b id="wCostLb">50%</b></span>
         <input type="range" id="wCost" min="0" max="100" step="10" value="50"></label>
       <div id="etfBox" style="margin-top:13px"></div>
-      <div class="hint" style="margin-top:10px">00915、00918、00929 查到的公開資料不足以填這張表（費用率或配息頻率缺漏），列在後面，需要自行查官網公開說明書補上，不要用缺資料的推測值。</div>
+      <div class="hint" style="margin-top:10px">00929 經理費查不到明確數字，無法算進分數，列在表格後面，需要自行查公開說明書補上，不要用缺資料的推測值。</div>
     </div>
   </div>
 
@@ -965,11 +965,11 @@ const ETF_DATA = [
   { code:'0056',  name:'元大高股息',     cost:0.335, monthly:false, yieldMid:'6~9%', rocNote:'未查到明確平準金比例' },
   { code:'00713', name:'元大台灣高息低波', cost:0.335, monthly:false, yieldMid:'6~9%', rocNote:'未查到明確平準金比例' },
   { code:'00919', name:'群益台灣精選高息', cost:0.335, monthly:true,  yieldMid:'10~13.3%', rocNote:'⚠ 淨值含約14.49元/單位資本利益平準金，殖利率部分由此支撐' },
+  { code:'00915', name:'凱基優選高股息30', cost:0.285, monthly:false, yieldMid:'未查到明確區間', rocNote:'未查到平準金資訊；經理費為級距制，規模>50億適用0.25%較低費率' },
+  { code:'00918', name:'大華優利高填息30', cost:0.39, monthly:false, yieldMid:'2024全年約12.95%（單年數字，非長期區間）', rocNote:'未查到平準金資訊；策略訴求「高填息」而非單純高殖利率' },
 ];
 const ETF_MISSING = [
-  { code:'00915', name:'凱基優選高股息30', why:'費用率、配息頻率皆未查到' },
-  { code:'00918', name:'大華優利高填息30', why:'費用率、配息頻率皆未查到' },
-  { code:'00929', name:'復華台灣科技優息', why:'費用率未查到；產業偏重科技股，集中度需另外評估' },
+  { code:'00929', name:'復華台灣科技優息', why:'配息頻率已確認為月配，但經理費未查到公開明確數字（僅查到保管費0.03~0.0425%），無法算費用率分數，需自行查公開說明書補上經理費' },
 ];
 
 function renderEtfCompare(){
