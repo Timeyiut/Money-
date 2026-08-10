@@ -383,6 +383,21 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
   </div>
 
   <div class="sec">
+    <div class="sec-title">高股息 ETF 比較・你設權重，不是排名建議</div>
+    <div class="card">
+      <div class="hint" style="margin:0 0 12px">
+      這裡只算「現金流貼合度」跟「費用率」兩項——都是查得到的客觀數字。殖利率和平準金風險只列出來當參考，沒有折進分數，因為換算成分數會是假精確。改權重看排名怎麼變，這就是重點：沒有唯一正確答案，答案取決於你在乎什麼。
+      </div>
+      <label class="fld"><span class="lb">現金流貼合度（月配優先）權重<b id="wCashLb">50%</b></span>
+        <input type="range" id="wCash" min="0" max="100" step="10" value="50"></label>
+      <label class="fld" style="margin-bottom:0"><span class="lb">費用率權重<b id="wCostLb">50%</b></span>
+        <input type="range" id="wCost" min="0" max="100" step="10" value="50"></label>
+      <div id="etfBox" style="margin-top:13px"></div>
+      <div class="hint" style="margin-top:10px">00915、00918、00929 查到的公開資料不足以填這張表（費用率或配息頻率缺漏），列在後面，需要自行查官網公開說明書補上，不要用缺資料的推測值。</div>
+    </div>
+  </div>
+
+  <div class="sec">
     <div class="sec-title">一塊錢該還債還是進場</div>
     <div class="card">
       <div class="hint" style="margin:0 0 12px">還掉一筆 r% 的貸款，等於拿到一個保證 r%、免稅、零波動的報酬。投資要贏過它，得先跨過這條線。</div>
@@ -944,6 +959,52 @@ function renderInvest(){
         : '目前沒有設定每月加碼金額，缺口不會自己補上。'}</div>`;
 }
 
+/* 資料來源：money101、豐雲學堂、今周刊、alphalab（2026/08 查詢），公開報導整理，非即時資料 */
+const ETF_DATA = [
+  { code:'00878', name:'國泰永續高股息', cost:0.28, monthly:false, yieldMid:'6~9%', rocNote:'未查到明確平準金比例' },
+  { code:'0056',  name:'元大高股息',     cost:0.335, monthly:false, yieldMid:'6~9%', rocNote:'未查到明確平準金比例' },
+  { code:'00713', name:'元大台灣高息低波', cost:0.335, monthly:false, yieldMid:'6~9%', rocNote:'未查到明確平準金比例' },
+  { code:'00919', name:'群益台灣精選高息', cost:0.335, monthly:true,  yieldMid:'10~13.3%', rocNote:'⚠ 淨值含約14.49元/單位資本利益平準金，殖利率部分由此支撐' },
+];
+const ETF_MISSING = [
+  { code:'00915', name:'凱基優選高股息30', why:'費用率、配息頻率皆未查到' },
+  { code:'00918', name:'大華優利高填息30', why:'費用率、配息頻率皆未查到' },
+  { code:'00929', name:'復華台灣科技優息', why:'費用率未查到；產業偏重科技股，集中度需另外評估' },
+];
+
+function renderEtfCompare(){
+  const wCash = +$('#wCash').value, wCost = +$('#wCost').value;
+  $('#wCashLb').textContent = wCash+'%';
+  $('#wCostLb').textContent = wCost+'%';
+  const wSum = wCash+wCost || 1;
+
+  const minCost = Math.min(...ETF_DATA.map(e=>e.cost));
+  const maxCost = Math.max(...ETF_DATA.map(e=>e.cost));
+
+  const rows = ETF_DATA.map(e=>{
+    const cashScore = e.monthly ? 100 : 40;
+    const costScore = maxCost>minCost ? 100 - (e.cost-minCost)/(maxCost-minCost)*60 : 100;
+    const score = (cashScore*wCash + costScore*wCost) / wSum;
+    return {...e, cashScore, costScore, score};
+  }).sort((a,b)=>b.score-a.score);
+
+  $('#etfBox').innerHTML = `
+    <table>
+      <thead><tr><th></th><th>配息頻率</th><th>費用率</th><th>殖利率區間</th><th>加權分數</th></tr></thead>
+      <tbody>
+        ${rows.map(r=>`<tr>
+          <td>${r.code}<br><span style="font-size:10.5px;color:var(--muted)">${r.name}</span></td>
+          <td>${r.monthly?'月配':'季配'}</td>
+          <td class="num">${r.cost}%</td>
+          <td class="num">${r.yieldMid}</td>
+          <td class="num"><b>${r.score.toFixed(0)}</b></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    ${rows.map(r=>r.rocNote.startsWith('⚠')?`<div class="hint" style="margin-top:8px">${r.code}：${r.rocNote}</div>`:'').join('')}
+    <div class="hint" style="margin-top:8px">${ETF_MISSING.map(e=>`${e.code}（${e.name}）：${e.why}`).join('；')}</div>`;
+}
+
 function renderHurdle(){
   const exp = +$('#exp').value;
   $('#expLb').textContent = exp.toFixed(1)+'%';
@@ -1030,6 +1091,7 @@ $('#cash').oninput = renderEF;
 $('#free').oninput = renderAlloc;
 $('#exp').oninput = ()=>{ renderHurdle(); renderAlloc(); };
 INV_FIELDS.forEach(id=>$('#'+id).addEventListener('input', ()=>{ saveInvState(); renderInvest(); }));
+['#wCash','#wCost'].forEach(s=>$(s).oninput = renderEtfCompare);
 
 /* ══════════════════════════════════════════════
    5. 啟動
@@ -1038,6 +1100,7 @@ renderHeader(); renderFlags(); renderCalendar(); renderDebtCards();
 renderStrategy(); renderDSR(); renderHurdle();
 loadStatements();
 loadInvState(); renderInvest();
+renderEtfCompare();
 </script>
 
 <script>
