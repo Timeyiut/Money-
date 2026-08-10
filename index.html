@@ -363,6 +363,26 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
 <!-- ══════════ 投資 ══════════ -->
 <section class="panel" id="p-inv">
   <div class="sec">
+    <div class="sec-title">投資部位追蹤・以息養貸（B筆轉貸）</div>
+    <div class="card">
+      <div class="hint" style="margin:0 0 12px">
+      轉貸多借出來的差額拿去投資，目標是配息長期蓋過這筆貸款的月付。這裡的數字要你自己定期回來更新，不接任何外部行情、不上傳。
+      </div>
+      <label class="fld"><span class="lb">投入本金<b id="invPrincipalLb">—</b></span>
+        <input type="number" id="invPrincipal" value="62976" step="1000" min="0"></label>
+      <label class="fld"><span class="lb">每月加碼<b id="invMonthlyLb">—</b></span>
+        <input type="number" id="invMonthly" value="4000" step="500" min="0"></label>
+      <label class="fld"><span class="lb">目前市值（自己回來更新）<b id="invValueLb">—</b></span>
+        <input type="number" id="invValue" value="62976" step="500" min="0"></label>
+      <label class="fld"><span class="lb">這期領到的配息<b id="invRecentDivLb">—</b></span>
+        <input type="number" id="invRecentDiv" value="0" step="100" min="0"></label>
+      <label class="fld" style="margin-bottom:0"><span class="lb">年化殖利率假設<b id="invYieldLb">8.0%</b></span>
+        <input type="range" id="invYield" min="3" max="15" step="0.5" value="8"></label>
+      <div id="invBox" style="margin-top:13px"></div>
+    </div>
+  </div>
+
+  <div class="sec">
     <div class="sec-title">一塊錢該還債還是進場</div>
     <div class="card">
       <div class="hint" style="margin:0 0 12px">還掉一筆 r% 的貸款，等於拿到一個保證 r%、免稅、零波動的報酬。投資要贏過它，得先跨過這條線。</div>
@@ -870,6 +890,60 @@ function renderEF(){
   renderAlloc();
 }
 
+const INV_FIELDS = ['invPrincipal','invMonthly','invValue','invRecentDiv','invYield'];
+function loadInvState(){
+  try{
+    const saved = JSON.parse(localStorage.getItem('invTracker')||'{}');
+    INV_FIELDS.forEach(id=>{ if(saved[id]!=null && $('#'+id)) $('#'+id).value = saved[id]; });
+  }catch(e){}
+}
+function saveInvState(){
+  const state = {};
+  INV_FIELDS.forEach(id=>{ const el=$('#'+id); if(el) state[id]=el.value; });
+  try{ localStorage.setItem('invTracker', JSON.stringify(state)); }catch(e){}
+}
+
+function renderInvest(){
+  const principal = +$('#invPrincipal').value||0;
+  const monthly = +$('#invMonthly').value||0;
+  const value = +$('#invValue').value||0;
+  const recentDiv = +$('#invRecentDiv').value||0;
+  const yieldPct = +$('#invYield').value;
+  $('#invPrincipalLb').textContent = fmt(principal);
+  $('#invMonthlyLb').textContent = fmt(monthly);
+  $('#invValueLb').textContent = fmt(value);
+  $('#invRecentDivLb').textContent = fmt(recentDiv);
+  $('#invYieldLb').textContent = yieldPct.toFixed(1)+'%';
+
+  const loanB = LOANS.find(l=>l.id==='B');
+  const payment = loanB ? loanB.payment : 0;
+  const needed = payment>0 ? (payment*12)/(yieldPct/100) : 0;
+  const gap = Math.max(needed - value, 0);
+  const coverage = payment>0 ? (recentDiv/payment*100) : 0;
+
+  let monthsLeft = null;
+  if(gap>0 && monthly>0){
+    const r = (yieldPct/100)/12;
+    let p = value, m = 0;
+    while(p < needed && m < 600){ p = p*(1+r) + monthly; m++; }
+    monthsLeft = m;
+  }
+
+  $('#invBox').innerHTML = `
+    <div class="debt-rows" style="border-top:1px dashed var(--line);padding-top:12px">
+      <div class="kv"><div class="k">這期配息覆蓋率（對月付 ${fmt(payment)}）</div><div class="v" style="font-size:20px">${coverage.toFixed(0)}%</div></div>
+      <div class="kv"><div class="k">損益（市值 − 累積投入）</div><div class="v" style="font-size:20px">${fmt(value-principal)}</div></div>
+      <div class="kv"><div class="k">配息蓋過月付所需市值</div><div class="v">${fmt(needed)}</div></div>
+      <div class="kv"><div class="k">還差多少</div><div class="v">${fmt(gap)}</div></div>
+    </div>
+    <div class="bar" style="height:8px;margin-top:10px"><span style="width:${Math.min(value/needed*100,100)}%;background:${coverage>=100?'var(--jade)':'var(--caution)'}"></span></div>
+    <div class="hint">${gap<=0
+      ? '市值已達到配息覆蓋月付的門檻（依目前殖利率假設）。'
+      : monthsLeft!=null
+        ? `照目前每月加碼 ${fmt(monthly)}、殖利率假設 ${yieldPct.toFixed(1)}% 複利滾入，估計還要 <b>${monthsLeft} 個月（${(monthsLeft/12).toFixed(1)} 年）</b>配息才會蓋過月付。這是樂觀情境的估計值，殖利率和市值都會波動，每月回來更新市值和配息，這個估計會跟著校正。`
+        : '目前沒有設定每月加碼金額，缺口不會自己補上。'}</div>`;
+}
+
 function renderHurdle(){
   const exp = +$('#exp').value;
   $('#expLb').textContent = exp.toFixed(1)+'%';
@@ -955,6 +1029,7 @@ $('#income').oninput = ()=>{ renderDSR(); };
 $('#cash').oninput = renderEF;
 $('#free').oninput = renderAlloc;
 $('#exp').oninput = ()=>{ renderHurdle(); renderAlloc(); };
+INV_FIELDS.forEach(id=>$('#'+id).addEventListener('input', ()=>{ saveInvState(); renderInvest(); }));
 
 /* ══════════════════════════════════════════════
    5. 啟動
@@ -962,6 +1037,7 @@ $('#exp').oninput = ()=>{ renderHurdle(); renderAlloc(); };
 renderHeader(); renderFlags(); renderCalendar(); renderDebtCards();
 renderStrategy(); renderDSR(); renderHurdle();
 loadStatements();
+loadInvState(); renderInvest();
 </script>
 
 <script>
