@@ -5,6 +5,11 @@ on:
     # 01:00 UTC on the 3rd of every month = 09:00 Asia/Taipei
     - cron: "0 1 3 * *"
   workflow_dispatch:
+    inputs:
+      debug_dump_text:
+        description: "Print decrypted text of unmatched statements to the log (rescans, doesn't touch data/statements.json)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -35,6 +40,7 @@ jobs:
           GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
           BANK_ID_NUMBER: ${{ secrets.BANK_ID_NUMBER }}
           BANK_BIRTHDAY: ${{ secrets.BANK_BIRTHDAY }}
+          DEBUG_DUMP_TEXT: ${{ inputs.debug_dump_text && '1' || '' }}
         run: python3 tools/fetch_bank_statements.py
 
       - name: Commit updated data
