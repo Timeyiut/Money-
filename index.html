@@ -373,6 +373,16 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
   </div>
 
   <div class="sec">
+    <div class="sec-title">00919 除息策略回測・歷史事實，不是預測</div>
+    <div class="card">
+      <div class="hint" style="margin:0 0 12px">
+      13次真實除息事件（2023/06~2026/06），比較「除息前買進、參與除息、抱到填息完成日賣」（Strategy A）vs「提前佈局、除息前賣掉」（Strategy B）。進場點統一是除息月第一個交易日。資料來源：Goodinfo 除權息日程表 + 證交所收盤價，方法在 <code>tools/backtest_00919.py</code>。
+      </div>
+      <div id="backtestBox"></div>
+    </div>
+  </div>
+
+  <div class="sec">
     <div class="sec-title">定期定額財富累積試算・存錢邏輯，不綁定特定標的</div>
     <div class="card">
       <div class="hint" style="margin:0 0 12px">
@@ -1017,6 +1027,37 @@ const HOLDINGS = [
 ];
 const SELL_FEE_FLAT = 1; // 零股定期定額券商常見均一價，假設賣出手續費同樣是這個水準
 
+async function loadBacktest(){
+  try{
+    const res = await fetch('./data/backtest_00919.json', {cache:'no-store'});
+    if(!res.ok) throw new Error('no data yet');
+    const data = await res.json();
+    const s = data.summary;
+    $('#backtestBox').innerHTML = `
+      <div class="debt-rows" style="padding-top:0">
+        <div class="kv"><div class="k">Strategy A 平均報酬</div><div class="v" style="font-size:20px;color:var(--jade)">+${s.strategy_a_avg_return_pct}%</div></div>
+        <div class="kv"><div class="k">Strategy B 平均報酬</div><div class="v" style="font-size:20px">+${s.strategy_b_avg_return_pct}%</div></div>
+        <div class="kv"><div class="k">A 勝率</div><div class="v">${s.strategy_a_win_rate_pct}%</div></div>
+        <div class="kv"><div class="k">A 贏 B 次數</div><div class="v">${s.a_beats_b_count} / ${s.events}</div></div>
+      </div>
+      <table style="margin-top:12px">
+        <thead><tr><th>除息日</th><th>配息</th><th>A報酬</th><th>A填息天數</th><th>B報酬</th></tr></thead>
+        <tbody>
+          ${data.events.map(e=>`<tr>
+            <td>${e.ex_date}</td>
+            <td class="num">${e.dividend}</td>
+            <td class="num" style="color:${e.strategy_a_return_pct>=0?'var(--jade)':'var(--alarm)'}">${e.strategy_a_return_pct>=0?'+':''}${e.strategy_a_return_pct}%</td>
+            <td class="num">${e.strategy_a_fill_days}天</td>
+            <td class="num" style="color:${e.strategy_b_return_pct>=0?'var(--jade)':'var(--alarm)'}">${e.strategy_b_return_pct>=0?'+':''}${e.strategy_b_return_pct}%</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <div class="hint" style="margin-top:8px">填息天數落差很大（1天~700天），A 的報酬是用更長的資金卡住時間換來的，這段機會成本沒算進報酬率裡。過去全填息不保證未來也是，這是歷史紀錄不是預測。</div>`;
+  }catch(e){
+    $('#backtestBox').innerHTML = `<div class="hint">還沒有回測資料。</div>`;
+  }
+}
+
 async function loadPrices(){
   try{
     const res = await fetch('./data/prices.json', {cache:'no-store'});
@@ -1295,6 +1336,7 @@ loadInvState(); renderInvest();
 renderEtfCompare();
 loadDcaState(); renderDca();
 loadPrices();
+loadBacktest();
 </script>
 
 <script>
