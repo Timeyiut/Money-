@@ -97,5 +97,104 @@
     "fetched_at": "2026-08-11T06:17:01.924472+00:00",
     "label": "應收付金額",
     "amount": "-885"
+  },
+  {
+    "message_id": "19fddc4789d7b729",
+    "subject": "O-Bank通知-2026年7月綜合對帳單",
+    "from": "\"O-Bank 王道銀行\" <estmt@service.o-bank.com>",
+    "date": "Sat, 08 Aug 2026 03:47:19 +0800",
+    "attachment": "PDF對帳單.pdf",
+    "unlocked": true,
+    "fetched_at": "2026-08-11T06:22:41.688712+00:00",
+    "label": "總資產",
+    "amount": "0"
+  },
+  {
+    "message_id": "19fdc3b4e1eb5e88",
+    "subject": "黃晉群君  永豐銀行2026年7月份電子綜合對帳單",
+    "from": "\"永豐銀行\" <ebillservice@newebill.banksinopac.com.tw>",
+    "date": "Fri, 07 Aug 2026 20:37:31 +0800",
+    "attachment": "永豐銀行2026年07月份-電子綜合對帳單.pdf",
+    "unlocked": true,
+    "fetched_at": "2026-08-11T06:22:42.324337+00:00",
+    "label": "存款",
+    "amount": "205"
+  },
+  {
+    "message_id": "19fcb277b9cd4f52",
+    "subject": "華南永昌證券月對帳單2026年7月",
+    "from": "\"華南永昌證券\" <service@bhu.entrust.com.tw>",
+    "date": "Tue, 04 Aug 2026 12:46:34 +0800",
+    "attachment": "115年07月敦南分公司31***16黃＊群證券月對帳單.pdf",
+    "unlocked": true,
+    "fetched_at": "2026-08-11T06:22:43.938050+00:00",
+    "label": null,
+    "amount": null
+  },
+  {
+    "message_id": "19fc2287076dd45c",
+    "subject": "臺灣土地銀行數位存款帳戶交易明細 (信函編號:11956419-S)",
+    "from": "\"土地銀行客戶訊息通知平台\" <services@cpmail.landbank.com.tw>",
+    "date": "Sun, 02 Aug 2026 19:07:36 +0800",
+    "attachment": "數位存款對帳單.pdf",
+    "unlocked": true,
+    "fetched_at": "2026-08-11T06:22:44.231567+00:00",
+    "label": "存款息",
+    "amount": "5.00"
+  },
+  {
+    "message_id": "19f56554b9adfdf1",
+    "subject": "115年06月綜合對帳單(S*******02)",
+    "from": "\"華南銀行綜合對帳單\" <ebillmail@ebmail.hncb.com.tw>",
+    "date": "Fri, 10 Jul 2026 06:46:59 +0800",
+    "attachment": "EBMA202607109837873.pdf",
+    "unlocked": true,
+    "fetched_at": "2026-08-11T06:22:44.652994+00:00",
+    "label": "台幣存款",
+    "amount": "20,419.00"
+  },
+  {
+    "message_id": "19f3d62ddfc3fd8c",
+    "subject": "O-Bank通知-2026年6月綜合對帳單",
+    "from": "\"O-Bank 王道銀行\" <estmt@service.o-bank.com>",
+    "date": "Wed, 08 Jul 2026 00:21:28 +0800",
+    "attachment": "PDF對帳單.pdf",
+    "unlocked": true,
+    "fetched_at": "2026-08-11T06:22:45.153247+00:00",
+    "label": "總資產",
+    "amount": "0"
+  },
+  {
+    "message_id": "19f31a8ac8de2f15",
+    "subject": "黃晉群君  永豐銀行2026年6月份電子綜合對帳單",
+    "from": "\"永豐銀行\" <ebillservice@newebill.banksinopac.com.tw>",
+    "date": "Sun, 05 Jul 2026 16:44:41 +0800",
+    "attachment": "永豐銀行2026年06月份-電子綜合對帳單.pdf",
+    "unlocked": true,
+    "fetched_at": "2026-08-11T06:22:45.740305+00:00",
+    "label": "存款",
+    "amount": "7,803"
+  },
+  {
+    "message_id": "19f2b830dfdf48a7",
+    "subject": "華南永昌證券月對帳單2026年6月",
+    "from": "\"華南永昌證券\" <service@bhu.entrust.com.tw>",
+    "date": "Fri, 03 Jul 2026 13:00:46 +0800",
+    "attachment": "115年06月敦南分公司31***16黃＊群證券月對帳單.pdf",
+    "unlocked": true,
+    "fetched_at": "2026-08-11T06:22:46.962959+00:00",
+    "label": null,
+    "amount": null
+  },
+  {
+    "message_id": "19f26c23fb29e74f",
+    "subject": "臺灣土地銀行數位存款帳戶交易明細 (信函編號:10249717-S)",
+    "from": "\"土地銀行客戶訊息通知平台\" <services@cpmail.landbank.com.tw>",
+    "date": "Fri, 03 Jul 2026 14:54:50 +0800",
+    "attachment": "數位存款對帳單.pdf",
+    "unlocked": true,
+    "fetched_at": "2026-08-11T06:22:47.204567+00:00",
+    "label": "存款息",
+    "amount": "5.00"
   }
 ]
