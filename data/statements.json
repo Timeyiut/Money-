@@ -174,5 +174,27 @@
     "fetched_at": "2026-08-11T06:22:47.204567+00:00",
     "label": "存款息",
     "amount": "5.00"
+  },
+  {
+    "message_id": "19feb1456dc844a0",
+    "subject": "兆豐銀行對帳單 2026年07月",
+    "from": "\"兆豐銀行\" <service@emailer.megabank.com.tw>",
+    "date": "Mon, 10 Aug 2026 17:49:39 +0800",
+    "attachment": "MegaAttachmentFile.pdf",
+    "unlocked": true,
+    "fetched_at": "2026-08-11T06:31:20.683608+00:00",
+    "label": "活期儲蓄",
+    "amount": "0.00"
+  },
+  {
+    "message_id": "19f4a6d313c1e163",
+    "subject": "兆豐銀行對帳單 2026年06月",
+    "from": "\"兆豐銀行\" <service@emailer.megabank.com.tw>",
+    "date": "Fri, 10 Jul 2026 13:08:06 +0800",
+    "attachment": "MegaAttachmentFile.pdf",
+    "unlocked": true,
+    "fetched_at": "2026-08-11T06:31:21.088578+00:00",
+    "label": "活期儲蓄",
+    "amount": "0.00"
   }
 ]
