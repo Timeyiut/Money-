@@ -1011,10 +1011,11 @@ function renderDca(){
 }
 
 const HOLDINGS = [
-  { code:'00878', name:'國泰永續高股息', shares:100, cost:33.35 },
-  { code:'00981A', name:'主動統一台股增長', shares:1000, cost:28.60 },
-  { code:'6531', name:'愛普*', shares:30, cost:825.26 },
+  { code:'00878', name:'國泰永續高股息', shares:100, cost:33.35, isEtf:true },
+  { code:'00981A', name:'主動統一台股增長', shares:1000, cost:28.60, isEtf:true },
+  { code:'6531', name:'愛普*', shares:30, cost:825.26, isEtf:false },
 ];
+const SELL_FEE_FLAT = 1; // 零股定期定額券商常見均一價，假設賣出手續費同樣是這個水準
 
 async function loadPrices(){
   try{
@@ -1032,12 +1033,15 @@ async function loadPrices(){
       const value = price!=null ? price*h.shares : h.cost*h.shares;
       const costValue = h.cost*h.shares;
       total += value;
-      return {...h, price, value, pnl: value-costValue};
+      const pnl = value-costValue;
+      const sellTax = value * (h.isEtf ? 0.001 : 0.003); // ETF千分之1，個股千分之3；未套用當沖減半，因為這是長期持有不是當沖
+      const netPnl = pnl - sellTax - SELL_FEE_FLAT;
+      return {...h, price, value, pnl, sellTax, netPnl};
     });
 
     $('#holdingsBox').innerHTML = `
       <table>
-        <thead><tr><th></th><th>股數</th><th>成本均價</th><th>收盤價</th><th>市值</th><th>損益</th></tr></thead>
+        <thead><tr><th></th><th>股數</th><th>成本均價</th><th>收盤價</th><th>市值</th><th>帳面損益</th><th>今賣淨損益</th></tr></thead>
         <tbody>
           ${lines.map(l=>`<tr>
             <td>${l.code}<br><span style="font-size:10.5px;color:var(--muted)">${l.name}</span></td>
@@ -1046,12 +1050,14 @@ async function loadPrices(){
             <td class="num">${l.price!=null?l.price.toFixed(2):'抓不到'}</td>
             <td class="num">${fmt(l.value)}</td>
             <td class="num" style="color:${l.pnl>=0?'var(--jade)':'var(--alarm)'}">${l.pnl>=0?'+':''}${fmt(l.pnl)}</td>
+            <td class="num" style="color:${l.netPnl>=0?'var(--jade)':'var(--alarm)'}">${l.netPnl>=0?'+':''}${fmt(l.netPnl)}</td>
           </tr>`).join('')}
         </tbody>
       </table>
       <div class="hint" style="margin-top:8px">${allFound
         ? `合計市值 ${fmt(total)}，資料日期 ${asOf||'—'}。已自動帶入下面「投資部位追蹤」的目前市值欄位。`
-        : '部分持倉抓不到收盤價（可能是還沒跑過第一次、連假、或代碼查無資料），該筆先用成本價估算，實際市值請自行核對。'}</div>`;
+        : '部分持倉抓不到收盤價（可能是還沒跑過第一次、連假、或代碼查無資料），該筆先用成本價估算，實際市值請自行核對。'}
+      <br><br>「今賣淨損益」= 帳面損益 − 證交稅（ETF千分之1／個股千分之3）− 假設賣出手續費 ${SELL_FEE_FLAT} 元。這是長期持有的一般稅率，不是當沖減半後的1.5‰——你目前這三筆是定期定額持有，不是當日沖銷，用一般稅率才對。買進時已經付過的手續費不重複計算（成本均價通常未內含手續費，但金額極小，這裡先忽略，不影響判斷方向）。</div>`;
 
     dashState.holdingsTotal = total;
     dashState.holdingsCost = lines.reduce((s,l)=>s+l.cost*l.shares,0);
