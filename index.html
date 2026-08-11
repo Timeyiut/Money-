@@ -394,16 +394,26 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
   </div>
 
   <div class="sec">
+    <div class="sec-title">持倉自動追蹤・證交所收盤價</div>
+    <div class="card">
+      <div class="hint" style="margin:0 0 12px">
+      每個交易日收盤後（約下午2:30後）由 GitHub Actions 自動抓證交所收盤價回來，不是即時跳動的報價，是每天更新一次。抓不到的時候（連假、API 異常）會顯示上一次成功抓到的資料，不會讓頁面壞掉。
+      </div>
+      <div id="holdingsBox"></div>
+    </div>
+  </div>
+
+  <div class="sec">
     <div class="sec-title">投資部位追蹤・以息養貸（B筆轉貸）</div>
     <div class="card">
       <div class="hint" style="margin:0 0 12px">
-      轉貸多借出來的差額拿去投資，目標是配息長期蓋過這筆貸款的月付。這裡的數字要你自己定期回來更新，不接任何外部行情、不上傳。
+      轉貸多借出來的差額拿去投資，目標是配息長期蓋過這筆貸款的月付。市值會在上面「持倉自動追蹤」抓到資料時自動帶入，抓不到時維持你手動輸入的數字。
       </div>
       <label class="fld"><span class="lb">投入本金<b id="invPrincipalLb">—</b></span>
         <input type="number" id="invPrincipal" value="56693" step="1000" min="0"></label>
       <label class="fld"><span class="lb">每月加碼<b id="invMonthlyLb">—</b></span>
         <input type="number" id="invMonthly" value="4000" step="500" min="0"></label>
-      <label class="fld"><span class="lb">目前市值（自己回來更新）<b id="invValueLb">—</b></span>
+      <label class="fld"><span class="lb">目前市值<b id="invValueLb">—</b></span>
         <input type="number" id="invValue" value="56980" step="500" min="0"></label>
       <label class="fld"><span class="lb">這期領到的配息<b id="invRecentDivLb">—</b></span>
         <input type="number" id="invRecentDiv" value="0" step="100" min="0"></label>
@@ -1000,6 +1010,59 @@ function renderDca(){
     <div class="hint" style="margin-top:8px">這是固定報酬率假設下的數學推算，不是報酬保證——實際市場逐年波動，早期年度本金小、複利效果不明顯，時間拉長後複利成長部分佔比才會顯著超過本金投入。</div>`;
 }
 
+const HOLDINGS = [
+  { code:'00878', name:'國泰永續高股息', shares:100, cost:33.35 },
+  { code:'00981A', name:'主動統一台股增長', shares:1000, cost:28.60 },
+  { code:'6531', name:'愛普*', shares:30, cost:825.26 },
+];
+
+async function loadPrices(){
+  try{
+    const res = await fetch('./data/prices.json', {cache:'no-store'});
+    if(!res.ok) throw new Error('no data yet');
+    const rows = await res.json();
+    const byCode = Object.fromEntries(rows.map(r=>[r.code, r]));
+
+    let total = 0, allFound = true, asOf = null;
+    const lines = HOLDINGS.map(h=>{
+      const p = byCode[h.code];
+      const price = p ? +p.close : null;
+      if(price==null){ allFound = false; }
+      else { asOf = p.date; }
+      const value = price!=null ? price*h.shares : h.cost*h.shares;
+      const costValue = h.cost*h.shares;
+      total += value;
+      return {...h, price, value, pnl: value-costValue};
+    });
+
+    $('#holdingsBox').innerHTML = `
+      <table>
+        <thead><tr><th></th><th>股數</th><th>成本均價</th><th>收盤價</th><th>市值</th><th>損益</th></tr></thead>
+        <tbody>
+          ${lines.map(l=>`<tr>
+            <td>${l.code}<br><span style="font-size:10.5px;color:var(--muted)">${l.name}</span></td>
+            <td class="num">${l.shares}</td>
+            <td class="num">${l.cost.toFixed(2)}</td>
+            <td class="num">${l.price!=null?l.price.toFixed(2):'抓不到'}</td>
+            <td class="num">${fmt(l.value)}</td>
+            <td class="num" style="color:${l.pnl>=0?'var(--jade)':'var(--alarm)'}">${l.pnl>=0?'+':''}${fmt(l.pnl)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <div class="hint" style="margin-top:8px">${allFound
+        ? `合計市值 ${fmt(total)}，資料日期 ${asOf||'—'}。已自動帶入下面「投資部位追蹤」的目前市值欄位。`
+        : '部分持倉抓不到收盤價（可能是還沒跑過第一次、連假、或代碼查無資料），該筆先用成本價估算，實際市值請自行核對。'}</div>`;
+
+    if(allFound){
+      $('#invValue').value = Math.round(total);
+      saveInvState();
+      renderInvest();
+    }
+  }catch(e){
+    $('#holdingsBox').innerHTML = `<div class="hint">還沒有自動抓到的股價資料（可能是 workflow 還沒跑過第一次），目前市值維持你在下面手動輸入的數字。</div>`;
+  }
+}
+
 const dashState = {};
 function renderInvest(){
   const principal = +$('#invPrincipal').value||0;
@@ -1212,6 +1275,7 @@ loadStatements();
 loadInvState(); renderInvest();
 renderEtfCompare();
 loadDcaState(); renderDca();
+loadPrices();
 </script>
 
 <script>
