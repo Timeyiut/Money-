@@ -48,6 +48,8 @@ BALANCE_PATTERNS = [
     ),
     re.compile(r"(帳戶餘額|存款餘額|活期存款餘額)[^\d]{0,10}([\d,]+)"),
     re.compile(r"(信用卡.{0,4}應繳|Total Amount Due)[^\d]{0,10}([\d,]+)"),
+    # 券商對帳單（華南永昌等）：結算後客戶實際應收或應付的淨額，可能為負
+    re.compile(r"(客戶應收付|應收付金額|客戶應收付金額)[^\d\-]{0,10}(-?[\d,]+)"),
 ]
 
 
@@ -172,7 +174,10 @@ def main() -> int:
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     existing = json.loads(out_path.read_text()) if out_path.exists() else []
-    seen_ids = {row["message_id"] for row in existing}
+    # DEBUG_DUMP_TEXT implies a rescan: the messages whose wording we need to
+    # inspect are already recorded, so the usual skip would hide them.
+    debug_dump = bool(os.environ.get("DEBUG_DUMP_TEXT"))
+    seen_ids = set() if debug_dump else {row["message_id"] for row in existing}
 
     service = gmail_service()
     results = service.users().messages().list(userId="me", q=query, maxResults=25).execute()
@@ -198,9 +203,18 @@ def main() -> int:
                 label, amount = extract_amount(text)
                 row["label"] = label
                 row["amount"] = amount
+                if amount is None and os.environ.get("DEBUG_DUMP_TEXT"):
+                    # Opt-in only: prints to the workflow log (visible to the
+                    # repo owner), never written to the committed JSON. Used to
+                    # discover the actual wording a bank uses so BALANCE_PATTERNS
+                    # can be extended without guessing.
+                    snippet = " ".join(text.split())[:600]
+                    print(f"\n--- unmatched: {filename} ---\n{snippet}\n", file=sys.stderr)
             new_rows.append(row)
 
-    if new_rows:
+    if debug_dump:
+        print(f"Debug rescan of {len(new_rows)} statement(s); {out_path} left unchanged.")
+    elif new_rows:
         combined = existing + new_rows
         out_path.write_text(json.dumps(combined, ensure_ascii=False, indent=2) + "\n")
         print(f"Added {len(new_rows)} new statement record(s) to {out_path}")
