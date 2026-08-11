@@ -363,6 +363,16 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
 <!-- ══════════ 投資 ══════════ -->
 <section class="panel" id="p-inv">
   <div class="sec">
+    <div class="sec-title">投資儀表板總覽</div>
+    <div class="card">
+      <div class="hint" style="margin:0 0 12px">
+      這張卡只彙整下面幾張卡片已經算出來的數字，不額外做判斷、不產生「建議買什麼」。所有輸入還是在各自的卡片裡調。
+      </div>
+      <div id="dashSummary"></div>
+    </div>
+  </div>
+
+  <div class="sec">
     <div class="sec-title">投資部位追蹤・以息養貸（B筆轉貸）</div>
     <div class="card">
       <div class="hint" style="margin:0 0 12px">
@@ -918,6 +928,7 @@ function saveInvState(){
   try{ localStorage.setItem('invTracker', JSON.stringify(state)); }catch(e){}
 }
 
+const dashState = {};
 function renderInvest(){
   const principal = +$('#invPrincipal').value||0;
   const monthly = +$('#invMonthly').value||0;
@@ -957,6 +968,13 @@ function renderInvest(){
       : monthsLeft!=null
         ? `照目前每月加碼 ${fmt(monthly)}、殖利率假設 ${yieldPct.toFixed(1)}% 複利滾入，估計還要 <b>${monthsLeft} 個月（${(monthsLeft/12).toFixed(1)} 年）</b>配息才會蓋過月付。這是樂觀情境的估計值，殖利率和市值都會波動，每月回來更新市值和配息，這個估計會跟著校正。`
         : '目前沒有設定每月加碼金額，缺口不會自己補上。'}</div>`;
+
+  dashState.payment = payment;
+  dashState.value = value;
+  dashState.coverage = coverage;
+  dashState.gap = gap;
+  dashState.monthsLeft = monthsLeft;
+  renderDashboardSummary();
 }
 
 /* 資料來源：money101、豐雲學堂、今周刊、alphalab（2026/08 查詢），公開報導整理，非即時資料 */
@@ -1003,6 +1021,25 @@ function renderEtfCompare(){
     </table>
     ${rows.map(r=>r.rocNote.startsWith('⚠')?`<div class="hint" style="margin-top:8px">${r.code}：${r.rocNote}</div>`:'').join('')}
     <div class="hint" style="margin-top:8px">${ETF_MISSING.map(e=>`${e.code}（${e.name}）：${e.why}`).join('；')}</div>`;
+
+  dashState.topEtf = rows[0];
+  dashState.wCash = wCash; dashState.wCost = wCost;
+  renderDashboardSummary();
+}
+
+function renderDashboardSummary(){
+  if(dashState.payment==null || dashState.topEtf==null) return;
+  const { payment, value, coverage, gap, monthsLeft, topEtf, wCash, wCost } = dashState;
+  $('#dashSummary').innerHTML = `
+    <div class="debt-rows" style="padding-top:0">
+      <div class="kv"><div class="k">B筆貸款月付</div><div class="v" style="font-size:18px">${fmt(payment)}</div></div>
+      <div class="kv"><div class="k">投資部位目前市值</div><div class="v" style="font-size:18px">${fmt(value)}</div></div>
+      <div class="kv"><div class="k">這期配息覆蓋率</div><div class="v" style="font-size:18px">${coverage.toFixed(0)}%</div></div>
+      <div class="kv"><div class="k">距離覆蓋月付還差</div><div class="v" style="font-size:18px">${gap<=0?'已達成':fmt(gap)}</div></div>
+    </div>
+    <div class="hint" style="margin-top:10px">
+    目前權重（現金流貼合 ${wCash}% / 費用率 ${wCost}%）下，比較表分數最高的是 <b>${topEtf.code} ${topEtf.name}</b>（${topEtf.score.toFixed(0)}分）——這是你設的權重算出來的排序結果，換一組權重排名會不同，不是系統幫你選的推薦。
+    </div>`;
 }
 
 function renderHurdle(){
