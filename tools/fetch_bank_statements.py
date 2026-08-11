@@ -50,7 +50,27 @@ BALANCE_PATTERNS = [
     re.compile(r"(信用卡.{0,4}應繳|Total Amount Due)[^\d]{0,10}([\d,]+)"),
     # 券商對帳單（華南永昌等）：結算後客戶實際應收或應付的淨額，可能為負
     re.compile(r"(客戶應收付|應收付金額|客戶應收付金額)[^\d\-]{0,10}(-?[\d,]+)"),
+    # 王道銀行 O-Bank：帳務資訊頁的「總資產」總覽數字
+    re.compile(r"(總資產)[^\d]{0,20}([\d,]+)\s*元"),
+    # 永豐銀行電子綜合對帳單：帳戶總覽表格「存款 205 臺幣 205」
+    re.compile(r"(存款)\s+([\d,]+)\s+臺幣"),
+    # 華南銀行綜合對帳單：資產總覽「1. 台幣存款 20,419.00」
+    re.compile(r"(台幣存款)\s+([\d,]+(?:\.\d+)?)"),
+    # 臺灣土地銀行數位存款交易明細：抓最後一筆交易列的餘額欄（格式較脆弱，
+    # 假設最後一行是「存款息」；若哪個月剛好不是，會抓不到，不會抓錯）
+    re.compile(r"(存款息)\s+[\d,.]+\s+[\d,.]+\s+([\d,.]+)"),
 ]
+
+
+def is_plausible_amount(raw: str) -> bool:
+    """Reject matches that are almost certainly an account number rather
+    than a currency amount: long digit strings with no thousands
+    separator (real balances this app has seen are always comma-grouped
+    or have a decimal point once they get into 5+ digits)."""
+    digits_only = raw.replace(",", "").replace(".", "")
+    if "," not in raw and "." not in raw and len(digits_only) >= 8:
+        return False
+    return True
 
 
 def build_password_candidates(id_number: str, birthday: str) -> list[str]:
@@ -122,9 +142,9 @@ def try_unlock_and_extract(pdf_bytes: bytes, passwords: list[str]) -> str | None
 
 def extract_amount(text: str) -> tuple[str, str] | tuple[None, None]:
     for pattern in BALANCE_PATTERNS:
-        match = pattern.search(text)
-        if match:
-            return match.group(1), match.group(2)
+        for match in pattern.finditer(text):
+            if is_plausible_amount(match.group(2)):
+                return match.group(1), match.group(2)
     return None, None
 
 
