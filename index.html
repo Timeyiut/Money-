@@ -373,6 +373,27 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
   </div>
 
   <div class="sec">
+    <div class="sec-title">定期定額財富累積試算・存錢邏輯，不綁定特定標的</div>
+    <div class="card">
+      <div class="hint" style="margin:0 0 12px">
+      這張卡不看你買哪一檔，只算「固定金額、固定時間投入」這個機制本身的數學。目的是存錢，不是選股，所以底下沒有任何股票代碼。
+      </div>
+      <label class="fld"><span class="lb">目前已有本金（現有持倉成本）<b id="dcaStartLb">—</b></span>
+        <input type="number" id="dcaStart" value="56693" step="1000" min="0"></label>
+      <label class="fld"><span class="lb">每月投入<b id="dcaMonthlyLb">—</b></span>
+        <input type="range" id="dcaMonthly" min="3000" max="5000" step="500" value="4000"></label>
+      <label class="fld"><span class="lb">年化報酬假設<b id="dcaReturnLb">6.0%</b></span>
+        <input type="range" id="dcaReturn" min="0" max="12" step="0.5" value="6"></label>
+      <label class="fld" style="margin-bottom:0"><span class="lb">投入年限<b id="dcaYearsLb">10 年</b></span>
+        <input type="range" id="dcaYears" min="1" max="30" step="1" value="10"></label>
+      <div id="dcaBox" style="margin-top:13px"></div>
+      <div class="hint" style="margin-top:10px">
+      公式：FV = P₀(1+r)ⁿ + PMT×[(1+r)ⁿ−1]/r。定期定額買到的平均成本，數學上是價格的調和平均數，依 AM-HM 不等式恆 ≤ 算術平均價格——這是唯一能證明的優勢，不是報酬保證。
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
     <div class="sec-title">投資部位追蹤・以息養貸（B筆轉貸）</div>
     <div class="card">
       <div class="hint" style="margin:0 0 12px">
@@ -928,6 +949,57 @@ function saveInvState(){
   try{ localStorage.setItem('invTracker', JSON.stringify(state)); }catch(e){}
 }
 
+const DCA_FIELDS = ['dcaStart','dcaMonthly','dcaReturn','dcaYears'];
+function loadDcaState(){
+  try{
+    const saved = JSON.parse(localStorage.getItem('dcaCalc')||'{}');
+    DCA_FIELDS.forEach(id=>{ if(saved[id]!=null && $('#'+id)) $('#'+id).value = saved[id]; });
+  }catch(e){}
+}
+function saveDcaState(){
+  const state = {};
+  DCA_FIELDS.forEach(id=>{ const el=$('#'+id); if(el) state[id]=el.value; });
+  try{ localStorage.setItem('dcaCalc', JSON.stringify(state)); }catch(e){}
+}
+
+function renderDca(){
+  const P0 = +$('#dcaStart').value||0;
+  const monthly = +$('#dcaMonthly').value||0;
+  const annualR = +$('#dcaReturn').value;
+  const years = +$('#dcaYears').value;
+  $('#dcaStartLb').textContent = fmt(P0);
+  $('#dcaMonthlyLb').textContent = fmt(monthly);
+  $('#dcaReturnLb').textContent = annualR.toFixed(1)+'%';
+  $('#dcaYearsLb').textContent = years+' 年';
+
+  const n = years*12;
+  const r = (annualR/100)/12;
+  const fv = r>0
+    ? P0*Math.pow(1+r,n) + monthly*((Math.pow(1+r,n)-1)/r)
+    : P0 + monthly*n;
+  const contributed = P0 + monthly*n;
+  const growth = fv - contributed;
+
+  const rows = [3,5,7,10,15,20].filter(y=>y<=30).map(y=>{
+    const m = y*12;
+    const v = r>0 ? P0*Math.pow(1+r,m) + monthly*((Math.pow(1+r,m)-1)/r) : P0+monthly*m;
+    return {y, v};
+  });
+
+  $('#dcaBox').innerHTML = `
+    <div class="debt-rows" style="border-top:1px dashed var(--line);padding-top:12px">
+      <div class="kv"><div class="k">${years}年後累積資產</div><div class="v" style="font-size:20px">${fmt(fv)}</div></div>
+      <div class="kv"><div class="k">累積投入本金</div><div class="v" style="font-size:20px">${fmt(contributed)}</div></div>
+      <div class="kv"><div class="k">複利成長部分</div><div class="v">${fmt(growth)}</div></div>
+      <div class="kv"><div class="k">投入本金佔比</div><div class="v">${(contributed/fv*100).toFixed(0)}%</div></div>
+    </div>
+    <table style="margin-top:12px">
+      <thead><tr><th>年數</th>${rows.map(x=>`<th>${x.y}年</th>`).join('')}</tr></thead>
+      <tbody><tr><td>累積資產</td>${rows.map(x=>`<td class="num">${fmt(x.v)}</td>`).join('')}</tr></tbody>
+    </table>
+    <div class="hint" style="margin-top:8px">這是固定報酬率假設下的數學推算，不是報酬保證——實際市場逐年波動，早期年度本金小、複利效果不明顯，時間拉長後複利成長部分佔比才會顯著超過本金投入。</div>`;
+}
+
 const dashState = {};
 function renderInvest(){
   const principal = +$('#invPrincipal').value||0;
@@ -1129,6 +1201,7 @@ $('#free').oninput = renderAlloc;
 $('#exp').oninput = ()=>{ renderHurdle(); renderAlloc(); };
 INV_FIELDS.forEach(id=>$('#'+id).addEventListener('input', ()=>{ saveInvState(); renderInvest(); }));
 ['#wCash','#wCost'].forEach(s=>$(s).oninput = renderEtfCompare);
+DCA_FIELDS.forEach(id=>$('#'+id).addEventListener('input', ()=>{ saveDcaState(); renderDca(); }));
 
 /* ══════════════════════════════════════════════
    5. 啟動
@@ -1138,6 +1211,7 @@ renderStrategy(); renderDSR(); renderHurdle();
 loadStatements();
 loadInvState(); renderInvest();
 renderEtfCompare();
+loadDcaState(); renderDca();
 </script>
 
 <script>
