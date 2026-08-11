@@ -33,17 +33,6 @@
     "amount": "70"
   },
   {
-    "message_id": "19f4a6d313c1e163",
-    "subject": "兆豐銀行對帳單 2026年06月",
-    "from": "\"兆豐銀行\" <service@emailer.megabank.com.tw>",
-    "date": "Fri, 10 Jul 2026 13:08:06 +0800",
-    "attachment": "MegaAttachmentFile.pdf",
-    "unlocked": true,
-    "fetched_at": "2026-08-07T14:05:04.817582+00:00",
-    "label": "存款餘額",
-    "amount": "04564027508"
-  },
-  {
     "message_id": "19f1de41d9e5614f",
     "subject": "華南期貨國內月對帳單2026年06月 PDF版",
     "from": "\"華南期貨國內月對帳單\" <service@bhu.entrust.com.tw>",
@@ -64,17 +53,6 @@
     "fetched_at": "2026-08-07T14:05:09.354308+00:00",
     "label": "應繳總金額",
     "amount": "4,513"
-  },
-  {
-    "message_id": "19feb1456dc844a0",
-    "subject": "兆豐銀行對帳單 2026年07月",
-    "from": "\"兆豐銀行\" <service@emailer.megabank.com.tw>",
-    "date": "Mon, 10 Aug 2026 17:49:39 +0800",
-    "attachment": "MegaAttachmentFile.pdf",
-    "unlocked": true,
-    "fetched_at": "2026-08-11T06:16:56.137643+00:00",
-    "label": "存款餘額",
-    "amount": "04564027508"
   },
   {
     "message_id": "19f7eda687a34f64",
