@@ -1053,6 +1053,12 @@ async function loadPrices(){
         ? `合計市值 ${fmt(total)}，資料日期 ${asOf||'—'}。已自動帶入下面「投資部位追蹤」的目前市值欄位。`
         : '部分持倉抓不到收盤價（可能是還沒跑過第一次、連假、或代碼查無資料），該筆先用成本價估算，實際市值請自行核對。'}</div>`;
 
+    dashState.holdingsTotal = total;
+    dashState.holdingsCost = lines.reduce((s,l)=>s+l.cost*l.shares,0);
+    dashState.holdingsAsOf = asOf;
+    dashState.holdingsAllFound = allFound;
+    renderDashboardSummary();
+
     if(allFound){
       $('#invValue').value = Math.round(total);
       saveInvState();
@@ -1164,13 +1170,20 @@ function renderEtfCompare(){
 
 function renderDashboardSummary(){
   if(dashState.payment==null || dashState.topEtf==null) return;
-  const { payment, value, coverage, gap, monthsLeft, topEtf, wCash, wCost } = dashState;
+  const { payment, value, coverage, gap, monthsLeft, topEtf, wCash, wCost,
+          holdingsTotal, holdingsCost, holdingsAsOf, holdingsAllFound } = dashState;
+  const hasHoldings = holdingsTotal!=null;
+  const holdingsPnl = hasHoldings ? holdingsTotal-holdingsCost : null;
   $('#dashSummary').innerHTML = `
     <div class="debt-rows" style="padding-top:0">
       <div class="kv"><div class="k">B筆貸款月付</div><div class="v" style="font-size:18px">${fmt(payment)}</div></div>
       <div class="kv"><div class="k">投資部位目前市值</div><div class="v" style="font-size:18px">${fmt(value)}</div></div>
       <div class="kv"><div class="k">這期配息覆蓋率</div><div class="v" style="font-size:18px">${coverage.toFixed(0)}%</div></div>
       <div class="kv"><div class="k">距離覆蓋月付還差</div><div class="v" style="font-size:18px">${gap<=0?'已達成':fmt(gap)}</div></div>
+      ${hasHoldings ? `
+      <div class="kv"><div class="k">持倉自動追蹤市值${holdingsAllFound?'':'（部分估算）'}</div><div class="v" style="font-size:18px">${fmt(holdingsTotal)}</div></div>
+      <div class="kv"><div class="k">持倉損益（收盤價 ${holdingsAsOf||'—'}）</div><div class="v" style="font-size:18px;color:${holdingsPnl>=0?'var(--jade)':'var(--alarm)'}">${holdingsPnl>=0?'+':''}${fmt(holdingsPnl)}</div></div>
+      ` : ''}
     </div>
     <div class="hint" style="margin-top:10px">
     目前權重（現金流貼合 ${wCash}% / 費用率 ${wCost}%）下，比較表分數最高的是 <b>${topEtf.code} ${topEtf.name}</b>（${topEtf.score.toFixed(0)}分）——這是你設的權重算出來的排序結果，換一組權重排名會不同，不是系統幫你選的推薦。
