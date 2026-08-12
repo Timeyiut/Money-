@@ -1,0 +1,118 @@
+{
+  "generated_at": "2026-08-12",
+  "source": "TWSE STOCK_DAY (上市) + TPEx tradingStock (上櫃) 官方每日收盤資料",
+  "disclaimer": "全部為回顧性統計，非預測、非評分、非推薦。位階高低不代表未來漲跌。",
+  "stocks": [
+    {
+      "code": "3105",
+      "name": "穩懋",
+      "market": "上櫃",
+      "note": "砷化鎵/磷化銦 磊晶代工",
+      "last_date": "2026-08-12",
+      "last_close": 400.0,
+      "high_52w": 617.0,
+      "low_52w": 84.8,
+      "range_position_pct": 59.2,
+      "below_high_pct": -35.17,
+      "above_low_pct": 371.7,
+      "return_20d_pct": 3.63,
+      "return_60d_pct": -11.21,
+      "return_250d_pct": 365.12,
+      "volume_ratio_5d_60d": 1.11,
+      "annualised_vol_pct": 78.6,
+      "trading_days": 294
+    },
+    {
+      "code": "8021",
+      "name": "尖點",
+      "market": "上櫃",
+      "note": "微鑽針・CNC 刀具",
+      "error": "只取到 0 個交易日，資料不足以計算"
+    },
+    {
+      "code": "4979",
+      "name": "華星光",
+      "market": "上櫃",
+      "note": "光通訊 光收發模組",
+      "last_date": "2026-08-12",
+      "last_close": 561.0,
+      "high_52w": 718.0,
+      "low_52w": 179.0,
+      "range_position_pct": 70.9,
+      "below_high_pct": -21.87,
+      "above_low_pct": 213.41,
+      "return_20d_pct": 36.83,
+      "return_60d_pct": 1.81,
+      "return_250d_pct": 184.05,
+      "volume_ratio_5d_60d": 1.47,
+      "annualised_vol_pct": 79.7,
+      "trading_days": 294
+    },
+    {
+      "code": "3363",
+      "name": "上詮",
+      "market": "上櫃",
+      "note": "光通訊 被動元件",
+      "last_date": "2026-08-12",
+      "last_close": 630.0,
+      "high_52w": 990.0,
+      "low_52w": 276.0,
+      "range_position_pct": 49.6,
+      "below_high_pct": -36.36,
+      "above_low_pct": 128.26,
+      "return_20d_pct": 5.53,
+      "return_60d_pct": -21.64,
+      "return_250d_pct": 105.21,
+      "volume_ratio_5d_60d": 1.04,
+      "annualised_vol_pct": 76.8,
+      "trading_days": 294
+    },
+    {
+      "code": "4977",
+      "name": "眾達-KY",
+      "market": "上櫃",
+      "note": "光通訊 收發模組",
+      "error": "只取到 0 個交易日，資料不足以計算"
+    },
+    {
+      "code": "3450",
+      "name": "聯鈞",
+      "market": "上櫃",
+      "note": "光電 雷射模組",
+      "error": "只取到 0 個交易日，資料不足以計算"
+    },
+    {
+      "code": "6451",
+      "name": "訊芯-KY",
+      "market": "上市",
+      "note": "IC 封裝測試",
+      "last_date": "2026-08-12",
+      "last_close": 451.0,
+      "high_52w": 724.0,
+      "low_52w": 133.5,
+      "range_position_pct": 53.8,
+      "below_high_pct": -37.71,
+      "above_low_pct": 237.83,
+      "return_20d_pct": -8.15,
+      "return_60d_pct": -13.27,
+      "return_250d_pct": 204.73,
+      "volume_ratio_5d_60d": 0.91,
+      "annualised_vol_pct": 84.7,
+      "trading_days": 294
+    },
+    {
+      "code": "3587",
+      "name": "閎康",
+      "market": "上市",
+      "note": "半導體材料分析",
+      "error": "只取到 0 個交易日，資料不足以計算"
+    },
+    {
+      "code": "3289",
+      "name": "宜特",
+      "market": "上市",
+      "note": "半導體驗證分析",
+      "error": "只取到 0 個交易日，資料不足以計算"
+    }
+  ]
+}
