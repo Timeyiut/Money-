@@ -383,6 +383,23 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
   </div>
 
   <div class="sec">
+    <div class="sec-title">熱度題材觀察名單・量測位置，不做判斷</div>
+    <div class="card">
+      <div class="hint" style="margin:0 0 12px">
+      這張卡量測 9 檔常被歸類為「瓶頸理論／光通訊」題材股目前在自己過去一年走勢裡的位置：52週區間位階、短中長期報酬、量比、年化波動率。全部是回顧性算術，沒有評分、沒有排序、不代表「還會不會漲」。資料來源：證交所 STOCK_DAY（上市）+ 櫃買中心 tradingStock（上櫃），方法在 <code>tools/fetch_momentum.py</code>。
+      </div>
+      <div id="momentumBox"></div>
+      <div class="hint" style="margin-top:14px">
+      <b>相關財金期刊理論（僅供參考，非投資建議）：</b><br>
+      · Da, Engelberg &amp; Gao (2011, <i>Journal of Finance</i>) — 用 Google 搜尋量量測「關注度」，發現關注度上升預測未來2週股價上漲，但一年內幾乎全數回吐。<br>
+      · Barber &amp; Odean (2008, <i>Review of Financial Studies</i>) — 散戶因為無法逐一分析全市場，傾向用「新聞多／成交量異常／單日暴漲」取代基本面分析來選股，這種關注度驅動的買進事後平均報酬為負。<br>
+      · Jegadeesh &amp; Titman (1993, <i>Journal of Finance</i>) — 動量效應存在但有明確時間窗口（3–12個月），第一年後異常報酬會逐步回吐。<br>
+      · Barber, Lee, Liu &amp; Odean（台灣全市場資料，<i>Review of Financial Studies</i>）— 台灣散戶因積極追進出場，整體年度虧損約當GDP的2.2%，個別組合落後大盤年化3.8個百分點。
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
     <div class="sec-title">定期定額財富累積試算・存錢邏輯，不綁定特定標的</div>
     <div class="card">
       <div class="hint" style="margin:0 0 12px">
@@ -1058,6 +1075,37 @@ async function loadBacktest(){
   }
 }
 
+async function loadMomentum(){
+  try{
+    const res = await fetch('./data/momentum.json', {cache:'no-store'});
+    if(!res.ok) throw new Error('no data yet');
+    const data = await res.json();
+    const rows = data.stocks.filter(s=>!s.error);
+    const errRows = data.stocks.filter(s=>s.error);
+    $('#momentumBox').innerHTML = `
+      <table>
+        <thead><tr><th></th><th>現價</th><th>52週位階</th><th>距高點</th><th>20日</th><th>60日</th><th>250日</th><th>量比5/60</th><th>年化波動</th></tr></thead>
+        <tbody>
+          ${rows.map(s=>`<tr>
+            <td>${s.name}<div class="hint" style="margin:0">${s.code}・${s.note}</div></td>
+            <td class="num">${s.last_close}</td>
+            <td class="num">${s.range_position_pct!=null?s.range_position_pct+'%':'—'}</td>
+            <td class="num">${s.below_high_pct}%</td>
+            <td class="num" style="color:${s.return_20d_pct>=0?'var(--jade)':'var(--alarm)'}">${s.return_20d_pct>=0?'+':''}${s.return_20d_pct}%</td>
+            <td class="num" style="color:${s.return_60d_pct>=0?'var(--jade)':'var(--alarm)'}">${s.return_60d_pct>=0?'+':''}${s.return_60d_pct}%</td>
+            <td class="num">${s.return_250d_pct!=null?(s.return_250d_pct>=0?'+':'')+s.return_250d_pct+'%':'—'}</td>
+            <td class="num">${s.volume_ratio_5d_60d ?? '—'}</td>
+            <td class="num">${s.annualised_vol_pct}%</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      ${errRows.length?`<div class="hint" style="margin-top:8px">${errRows.map(e=>`${e.name}（${e.code}）：${e.error}`).join('；')}</div>`:''}
+      <div class="hint" style="margin-top:8px">資料日期：${data.generated_at}。位階高不代表要漲，位階低不代表被低估——本身沒有方向性含義。</div>`;
+  }catch(e){
+    $('#momentumBox').innerHTML = `<div class="hint">還沒有量測資料，需先在 GitHub Actions 執行一次「Measure watchlist momentum」。</div>`;
+  }
+}
+
 async function loadPrices(){
   try{
     const res = await fetch('./data/prices.json', {cache:'no-store'});
@@ -1337,6 +1385,7 @@ renderEtfCompare();
 loadDcaState(); renderDca();
 loadPrices();
 loadBacktest();
+loadMomentum();
 </script>
 
 <script>
