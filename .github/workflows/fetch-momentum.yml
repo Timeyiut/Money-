@@ -1,0 +1,42 @@
+name: Measure watchlist momentum
+
+on:
+  workflow_dispatch:
+    inputs:
+      debug_dump:
+        description: "Print raw exchange responses instead of running the full measurement"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  momentum:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Measure
+        env:
+          DEBUG_DUMP: ${{ inputs.debug_dump && '1' || '' }}
+        run: python3 tools/fetch_momentum.py
+
+      - name: Commit result
+        if: ${{ !inputs.debug_dump }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/momentum.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: update watchlist momentum measurements"
+            git push
+          fi
