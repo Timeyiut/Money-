@@ -1057,7 +1057,7 @@ const HOLDINGS = [
   { code:'00981A', name:'主動統一台股增長', shares:330, cost:30.34, isEtf:true, account:'元大' },
   { code:'00405A', name:'主動富邦台灣龍耀', shares:2000, cost:8.40, isEtf:true, account:'元大', pledged:true },
 ];
-const MARGIN_LOAN = { collateralCode:'00405A', borrowed:10000, interestRate:0.0385, maintenanceRatioPct:173.20, ltvCapPct:60 };
+const MARGIN_LOAN = { collateralCode:'00405A', borrowed:10000, interestRate:0.0385, maintenanceRatioPct:173.20, ltvCapPct:60, usedFor:'00981A' };
 const SELL_FEE_FLAT = 1; // 零股定期定額券商常見均一價，假設賣出手續費同樣是這個水準
 
 async function loadBacktest(){
@@ -1166,11 +1166,15 @@ async function loadPrices(){
       <br><br>「今賣淨損益」= 帳面損益 − 證交稅（ETF千分之1／個股千分之3）− 假設賣出手續費 ${SELL_FEE_FLAT} 元。這是長期持有的一般稅率，不是當沖減半後的1.5‰——這些都是定期定額持有，不是當日沖銷，用一般稅率才對。買進時已經付過的手續費不重複計算（成本均價通常未內含手續費，但金額極小，這裡先忽略，不影響判斷方向）。同一檔（00981A）在華南、國泰、元大三個帳戶共有三筆不同成本的買進紀錄，分開列示，不合併平均成本。元大那筆 00405A（2,000股）目前質押借款中，法律上還是你的資產，但被質押期間若要賣出需先解除質押。</div>`;
 
     const pledgedLine = lines.find(l=>l.pledged);
+    const reinvestLine = lines.find(l=>l.account==='元大' && l.code===MARGIN_LOAN.usedFor && !l.pledged);
     if(pledgedLine){
       const collateralValue = pledgedLine.value;
       const ltvNowPct = collateralValue>0 ? (MARGIN_LOAN.borrowed/collateralValue*100) : null;
       const maintNowPct = MARGIN_LOAN.borrowed>0 ? (collateralValue/MARGIN_LOAN.borrowed*100) : null;
       const room = collateralValue*(MARGIN_LOAN.ltvCapPct/100) - MARGIN_LOAN.borrowed;
+      const exposure = collateralValue + (reinvestLine?reinvestLine.value:0);
+      const equity = exposure - MARGIN_LOAN.borrowed;
+      const leverageRatio = equity>0 ? exposure/equity : null;
       $('#marginBox').innerHTML = `
         <div class="debt-rows" style="padding-top:0">
           <div class="kv"><div class="k">質押品（${pledgedLine.code} ${pledgedLine.name}）現值</div><div class="v">${fmt(collateralValue)}</div></div>
@@ -1178,8 +1182,14 @@ async function loadPrices(){
           <div class="kv"><div class="k">動用槓桿（借款÷質押品現值）</div><div class="v">${ltvNowPct!=null?ltvNowPct.toFixed(1)+'%':'—'}</div></div>
           <div class="kv"><div class="k">目前維持率（質押品現值÷借款）</div><div class="v">${maintNowPct!=null?maintNowPct.toFixed(1)+'%':'—'}</div></div>
           <div class="kv"><div class="k">可貸成數上限 ${MARGIN_LOAN.ltvCapPct}% 下剩餘額度</div><div class="v">${fmt(Math.max(0,room))}</div></div>
+          ${reinvestLine?`
+          <div class="kv"><div class="k">借款買進 ${reinvestLine.code}（${reinvestLine.shares}股）現值</div><div class="v">${fmt(reinvestLine.value)}</div></div>
+          <div class="kv"><div class="k">元大帳戶總曝險（質押品+借款買進部位）</div><div class="v">${fmt(exposure)}</div></div>
+          <div class="kv"><div class="k">元大帳戶淨值（總曝險−借款）</div><div class="v">${fmt(equity)}</div></div>
+          <div class="kv"><div class="k">槓桿倍數（總曝險÷淨值）</div><div class="v" style="color:var(--alarm)">${leverageRatio!=null?leverageRatio.toFixed(2)+'倍':'—'}</div></div>
+          `:''}
         </div>
-        <div class="hint" style="margin-top:10px">利率 ${(MARGIN_LOAN.interestRate*100).toFixed(2)}%。質押品市值會隨股價每天變動，維持率跟著變動——股價跌，維持率跟著掉；掉到券商設定的追繳線會被要求補繳擔保品或部分還款。這筆借出的 ${fmt(MARGIN_LOAN.borrowed)} 目前用途（是否已再投入市場）沒有記錄在這裡，如果有再投入，你的實際曝險會比單看持股市值更高。</div>`;
+        <div class="hint" style="margin-top:10px">利率 ${(MARGIN_LOAN.interestRate*100).toFixed(2)}%。這筆借出的 ${fmt(MARGIN_LOAN.borrowed)} 已用來買進 ${MARGIN_LOAN.usedFor}，所以元大帳戶是真的槓桿部位，不是單純質押借現金——${pledgedLine.code} 和 ${MARGIN_LOAN.usedFor} 只要有一個跌，維持率同時往下掉，兩者同漲同跌時波動會被放大約 ${leverageRatio!=null?leverageRatio.toFixed(1):'—'} 倍。質押品市值每天變動，維持率跟著變動，掉到券商設定的追繳線會被要求補繳擔保品或部分還款。</div>`;
     }
 
     dashState.holdingsTotal = total;
