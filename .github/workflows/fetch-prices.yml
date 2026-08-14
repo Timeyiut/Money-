@@ -2,8 +2,10 @@ name: Fetch stock prices
 
 on:
   schedule:
-    # 14:30 Taipei (06:30 UTC), weekdays only — after TWSE close
-    - cron: "30 6 * * 1-5"
+    # 16:00 Taipei (08:00 UTC), weekdays only. Market closes 13:30 but the
+    # exchanges' after-hours files land ~15:00-16:00, so the old 14:30 run
+    # was often reading the *previous* day's close.
+    - cron: "0 8 * * 1-5"
   workflow_dispatch:
 
 permissions:
