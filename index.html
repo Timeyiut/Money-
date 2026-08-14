@@ -431,6 +431,16 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
   </div>
 
   <div class="sec">
+    <div class="sec-title">股票質押槓桿狀況</div>
+    <div class="card">
+      <div class="hint" style="margin:0 0 12px">
+      用元大帳戶的 00405A 質押借出現金，這張卡算的是「質押品現值 vs 借款」的即時關係，質押品市值跟上面「持倉自動追蹤」共用同一份收盤價資料。
+      </div>
+      <div id="marginBox"><div class="hint">還沒有資料。</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
     <div class="sec-title">投資部位追蹤・以息養貸（B筆轉貸）</div>
     <div class="card">
       <div class="hint" style="margin:0 0 12px">
@@ -1044,9 +1054,10 @@ const HOLDINGS = [
   { code:'1303', name:'南亞', shares:50, cost:187.06, isEtf:false, account:'華南' },
   { code:'00981A', name:'主動統一台股增長', shares:30, cost:29.47, isEtf:true, account:'國泰' },
   { code:'00955', name:'中信日本商社', shares:12, cost:16.25, isEtf:true, account:'國泰' },
-  { code:'00981A', name:'主動統一台股增長', shares:330, cost:30.34, isEtf:true, account:'元大', pledged:true },
-  { code:'00405A', name:'主動富邦台灣龍耀', shares:2000, cost:8.40, isEtf:true, account:'元大' },
+  { code:'00981A', name:'主動統一台股增長', shares:330, cost:30.34, isEtf:true, account:'元大' },
+  { code:'00405A', name:'主動富邦台灣龍耀', shares:2000, cost:8.40, isEtf:true, account:'元大', pledged:true },
 ];
+const MARGIN_LOAN = { collateralCode:'00405A', borrowed:10000, interestRate:0.0385, maintenanceRatioPct:173.20, ltvCapPct:60 };
 const SELL_FEE_FLAT = 1; // 零股定期定額券商常見均一價，假設賣出手續費同樣是這個水準
 
 async function loadBacktest(){
@@ -1152,12 +1163,31 @@ async function loadPrices(){
       <div class="hint" style="margin-top:8px">${allFound
         ? `合計市值 ${fmt(total)}，資料日期 ${asOf||'—'}。已自動帶入下面「投資部位追蹤」的目前市值欄位。`
         : '部分持倉抓不到收盤價（可能是還沒跑過第一次、連假、或代碼查無資料），該筆先用成本價估算，實際市值請自行核對。'}
-      <br><br>「今賣淨損益」= 帳面損益 − 證交稅（ETF千分之1／個股千分之3）− 假設賣出手續費 ${SELL_FEE_FLAT} 元。這是長期持有的一般稅率，不是當沖減半後的1.5‰——這些都是定期定額持有，不是當日沖銷，用一般稅率才對。買進時已經付過的手續費不重複計算（成本均價通常未內含手續費，但金額極小，這裡先忽略，不影響判斷方向）。同一檔（00981A）在華南、國泰、元大三個帳戶共有三筆不同成本的買進紀錄，分開列示，不合併平均成本。元大那筆 330 股目前質押借款中（見股票借貸卡片），法律上還是你的資產，但被質押期間若要賣出需先解除質押。</div>`;
+      <br><br>「今賣淨損益」= 帳面損益 − 證交稅（ETF千分之1／個股千分之3）− 假設賣出手續費 ${SELL_FEE_FLAT} 元。這是長期持有的一般稅率，不是當沖減半後的1.5‰——這些都是定期定額持有，不是當日沖銷，用一般稅率才對。買進時已經付過的手續費不重複計算（成本均價通常未內含手續費，但金額極小，這裡先忽略，不影響判斷方向）。同一檔（00981A）在華南、國泰、元大三個帳戶共有三筆不同成本的買進紀錄，分開列示，不合併平均成本。元大那筆 00405A（2,000股）目前質押借款中，法律上還是你的資產，但被質押期間若要賣出需先解除質押。</div>`;
+
+    const pledgedLine = lines.find(l=>l.pledged);
+    if(pledgedLine){
+      const collateralValue = pledgedLine.value;
+      const ltvNowPct = collateralValue>0 ? (MARGIN_LOAN.borrowed/collateralValue*100) : null;
+      const maintNowPct = MARGIN_LOAN.borrowed>0 ? (collateralValue/MARGIN_LOAN.borrowed*100) : null;
+      const room = collateralValue*(MARGIN_LOAN.ltvCapPct/100) - MARGIN_LOAN.borrowed;
+      $('#marginBox').innerHTML = `
+        <div class="debt-rows" style="padding-top:0">
+          <div class="kv"><div class="k">質押品（${pledgedLine.code} ${pledgedLine.name}）現值</div><div class="v">${fmt(collateralValue)}</div></div>
+          <div class="kv"><div class="k">已借金額</div><div class="v">${fmt(MARGIN_LOAN.borrowed)}</div></div>
+          <div class="kv"><div class="k">動用槓桿（借款÷質押品現值）</div><div class="v">${ltvNowPct!=null?ltvNowPct.toFixed(1)+'%':'—'}</div></div>
+          <div class="kv"><div class="k">目前維持率（質押品現值÷借款）</div><div class="v">${maintNowPct!=null?maintNowPct.toFixed(1)+'%':'—'}</div></div>
+          <div class="kv"><div class="k">可貸成數上限 ${MARGIN_LOAN.ltvCapPct}% 下剩餘額度</div><div class="v">${fmt(Math.max(0,room))}</div></div>
+        </div>
+        <div class="hint" style="margin-top:10px">利率 ${(MARGIN_LOAN.interestRate*100).toFixed(2)}%。質押品市值會隨股價每天變動，維持率跟著變動——股價跌，維持率跟著掉；掉到券商設定的追繳線會被要求補繳擔保品或部分還款。這筆借出的 ${fmt(MARGIN_LOAN.borrowed)} 目前用途（是否已再投入市場）沒有記錄在這裡，如果有再投入，你的實際曝險會比單看持股市值更高。</div>`;
+    }
 
     dashState.holdingsTotal = total;
     dashState.holdingsCost = lines.reduce((s,l)=>s+l.cost*l.shares,0);
     dashState.holdingsAsOf = asOf;
     dashState.holdingsAllFound = allFound;
+    dashState.marginBorrowed = MARGIN_LOAN.borrowed;
+    dashState.marginNetValue = total - MARGIN_LOAN.borrowed;
     renderDashboardSummary();
 
     if(allFound){
@@ -1272,7 +1302,8 @@ function renderEtfCompare(){
 function renderDashboardSummary(){
   if(dashState.payment==null || dashState.topEtf==null) return;
   const { payment, value, coverage, gap, monthsLeft, topEtf, wCash, wCost,
-          holdingsTotal, holdingsCost, holdingsAsOf, holdingsAllFound } = dashState;
+          holdingsTotal, holdingsCost, holdingsAsOf, holdingsAllFound,
+          marginBorrowed, marginNetValue } = dashState;
   const hasHoldings = holdingsTotal!=null;
   const holdingsPnl = hasHoldings ? holdingsTotal-holdingsCost : null;
   $('#dashSummary').innerHTML = `
@@ -1284,6 +1315,10 @@ function renderDashboardSummary(){
       ${hasHoldings ? `
       <div class="kv"><div class="k">持倉自動追蹤市值${holdingsAllFound?'':'（部分估算）'}</div><div class="v" style="font-size:18px">${fmt(holdingsTotal)}</div></div>
       <div class="kv"><div class="k">持倉損益（收盤價 ${holdingsAsOf||'—'}）</div><div class="v" style="font-size:18px;color:${holdingsPnl>=0?'var(--jade)':'var(--alarm)'}">${holdingsPnl>=0?'+':''}${fmt(holdingsPnl)}</div></div>
+      ` : ''}
+      ${marginBorrowed!=null ? `
+      <div class="kv"><div class="k">股票質押借款</div><div class="v" style="font-size:18px">${fmt(marginBorrowed)}</div></div>
+      <div class="kv"><div class="k">持倉市值扣除質押借款（淨部位）</div><div class="v" style="font-size:18px">${fmt(marginNetValue)}</div></div>
       ` : ''}
     </div>
     <div class="hint" style="margin-top:10px">
