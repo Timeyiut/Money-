@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 from urllib.request import Request, urlopen
 
-CODES = ["00878", "00981A", "6531", "00405A"]
+CODES = ["00878", "00981A", "6531", "00405A", "1303", "00955"]
 URL = "https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL"
 
 
