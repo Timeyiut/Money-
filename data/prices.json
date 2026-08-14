@@ -1,38 +1,44 @@
 [
   {
     "code": "00878",
-    "name": "國泰永續高股息",
-    "close": "33.78",
-    "date": "1150813"
+    "name": "Cathay Sustainability High Dividend ETF",
+    "close": "33.87",
+    "date": "2026-08-14",
+    "source": "Yahoo.TW"
   },
   {
     "code": "00981A",
-    "name": "主動統一台股增長",
-    "close": "29.95",
-    "date": "1150813"
+    "name": "Uni-President Asset Management Corp - UPAMC Taiwan Growth Active ETF",
+    "close": "30.22",
+    "date": "2026-08-14",
+    "source": "Yahoo.TW"
   },
   {
     "code": "6531",
-    "name": "愛普*",
-    "close": "865.00",
-    "date": "1150813"
+    "name": "AP Memory Technology Corporation",
+    "close": "932.00",
+    "date": "2026-08-14",
+    "source": "Yahoo.TW"
   },
   {
     "code": "00405A",
-    "name": "主動富邦台灣龍耀",
-    "close": "8.62",
-    "date": "1150813"
+    "name": "Fubon Taiwan Glory Active ETF",
+    "close": "8.66",
+    "date": "2026-08-14",
+    "source": "Yahoo.TW"
   },
   {
     "code": "1303",
-    "name": "南亞",
-    "close": "189.00",
-    "date": "1150813"
+    "name": "Nan Ya Plastics Corporation",
+    "close": "207.50",
+    "date": "2026-08-14",
+    "source": "Yahoo.TW"
   },
   {
     "code": "00955",
-    "name": "中信日本商社",
+    "name": "CTBC Japan Commercial and Wholesale Trade ETF",
     "close": "15.55",
-    "date": "1150814"
+    "date": "2026-08-14",
+    "source": "Yahoo.TWO"
   }
 ]
