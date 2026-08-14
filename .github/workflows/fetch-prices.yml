@@ -2,10 +2,11 @@ name: Fetch stock prices
 
 on:
   schedule:
-    # 16:00 Taipei (08:00 UTC), weekdays only. Market closes 13:30 but the
-    # exchanges' after-hours files land ~15:00-16:00, so the old 14:30 run
-    # was often reading the *previous* day's close.
-    - cron: "0 8 * * 1-5"
+    # 21:00 Taipei (13:00 UTC), weekdays only. Market closes 13:30, but a
+    # 16:00 Taipei run was verified on 2026-08-14 to still return the
+    # *previous* day's close — these OpenAPI daily files publish late in
+    # the evening, not right after the bell.
+    - cron: "0 13 * * 1-5"
   workflow_dispatch:
 
 permissions:

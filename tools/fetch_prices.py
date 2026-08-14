@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import json
 import sys
+import time
 from pathlib import Path
 from urllib.request import Request, urlopen
 
@@ -34,10 +35,28 @@ TPEX_URL = "https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes
 OUT_PATH = Path("data/prices.json")
 
 
-def fetch_json(url: str):
-    req = Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    with urlopen(req, timeout=30) as resp:
-        return json.loads(resp.read())
+def fetch_json(url: str, attempts: int = 4):
+    """The TPEx payload is ~4MB and its server routinely cuts the stream
+    short (IncompleteRead), which previously killed that whole source and
+    with it every 上櫃 holding. Retry, and ask for an unencoded body so a
+    truncated gzip stream can't masquerade as a parse error."""
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "Accept": "application/json",
+        "Accept-Encoding": "identity",
+        "Connection": "close",
+    }
+    last_error = None
+    for attempt in range(1, attempts + 1):
+        try:
+            with urlopen(Request(url, headers=headers), timeout=60) as resp:
+                return json.loads(resp.read())
+        except Exception as e:  # noqa: BLE001
+            last_error = e
+            print(f"  attempt {attempt}/{attempts} failed: {e}", file=sys.stderr)
+            if attempt < attempts:
+                time.sleep(2 * attempt)
+    raise last_error
 
 
 def first_field(row: dict, *names: str):
