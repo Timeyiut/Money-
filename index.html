@@ -24,7 +24,7 @@
   --surface-2:#F3F5F8;
   --ink:#0F1720;
   --ink-2:#3D4A57;
-  --muted:#7A8794;
+  --muted:#66717C;
   --line:#DDE3EA;
   --jade:#0E7A5F;
   --jade-soft:#E3F2ED;
@@ -118,6 +118,18 @@ main{
   display:flex;align-items:center;gap:8px;margin-bottom:9px;
 }
 .sec-title::after{content:"";flex:1;height:1px;background:var(--line)}
+/* accordion: .sec is a <details>, .sec-title a <summary>. Content stays in
+   the DOM either way (closed state is display:none under the hood), so
+   inputs inside a collapsed card still work and their JS still runs —
+   collapsing is purely visual. */
+details.sec > summary.sec-title{cursor:pointer;list-style:none;user-select:none}
+details.sec > summary.sec-title::-webkit-details-marker{display:none}
+details.sec > summary.sec-title::before{
+  content:"";width:6px;height:6px;flex:none;
+  border-right:1.6px solid var(--muted);border-bottom:1.6px solid var(--muted);
+  transform:rotate(-45deg);transition:transform .18s ease;
+}
+details.sec[open] > summary.sec-title::before{transform:rotate(45deg)}
 
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:15px}
 .card + .card{margin-top:10px}
@@ -192,6 +204,19 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .bud-track i{display:block;height:100%}
 
 .hint{font-size:11.5px;color:var(--muted);line-height:1.7;margin-top:9px}
+
+/* loading skeleton — static default markup for boxes that fill in via
+   fetch(), shown from first paint (no JS needed to trigger it) and
+   simply overwritten once loadX() sets real content or an error state. */
+.skel{display:flex;flex-direction:column;gap:9px}
+.skel-bar{height:13px;border-radius:6px;
+  background:linear-gradient(90deg,var(--surface-2) 25%,var(--line) 37%,var(--surface-2) 63%);
+  background-size:400% 100%;animation:skel-shimmer 1.4s ease infinite}
+@keyframes skel-shimmer{0%{background-position:100% 50%}100%{background-position:0 50%}}
+.skel-bar:nth-child(1){width:55%}
+.skel-bar:nth-child(2){width:100%}
+.skel-bar:nth-child(3){width:82%}
+.skel-bar:nth-child(4){width:40%}
 code{font-family:var(--mono);font-size:11.5px;background:var(--surface-2);
   padding:1px 5px;border-radius:4px;color:var(--violet)}
 pre{background:#0F1720;color:#D6E2E0;border-radius:12px;padding:13px;overflow-x:auto;
@@ -232,6 +257,16 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
 
 <main>
 
+<div class="card" id="onboardTip" style="display:none;margin-bottom:14px;background:var(--violet-soft);border-color:var(--violet)">
+  <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+    <div>
+      <div style="font-weight:700;font-size:13px;margin-bottom:4px;color:var(--ink)">第一次使用？</div>
+      <div class="hint" style="margin:0">下面 5 個頁籤：<b>總覽</b> 看總負債，<b>債務</b> 管理每筆貸款和帳單，<b>金流</b> 抓月預算，<b>投資</b> 是試算工具（不是推薦股票，每張卡自己調參數），<b>工程</b> 是這個 App 的技術說明。所有資料存在你的裝置和這個 GitHub repo，沒有後端、不上傳。</div>
+    </div>
+    <button id="onboardDismiss" aria-label="關閉說明" style="flex:none;border:0;background:none;color:var(--muted);font-size:18px;line-height:1;cursor:pointer;padding:2px 4px">×</button>
+  </div>
+</div>
+
 <!-- ══════════ 總覽 ══════════ -->
 <section class="panel on" id="p-home">
   <div class="sec">
@@ -264,7 +299,7 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
       <div class="hint" style="margin:0 0 10px">
       每月從信箱抓到、已解密讀出的帳單金額，僅供比對——不會自動改掉下面的餘額，確認無誤後自己更新 <code>LOANS</code>。
       </div>
-      <div id="statementRows"></div>
+      <div id="statementRows"><div class="skel"><div class="skel-bar"></div><div class="skel-bar"></div><div class="skel-bar"></div></div></div>
     </div>
   </div>
 
@@ -280,7 +315,7 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
       3362 與 3375 撥款日、到期日、利率、期數完全相同，扣款帳戶也是同一個。實務上這是<b>一次 1,676,185 元的整合案拆成兩個額度核給</b>，管理上要當成一筆看。
       </div>
       <table>
-        <thead><tr><th></th><th>3362</th><th>3375</th><th>合計</th></tr></thead>
+        <thead><tr><th scope="col"></th><th scope="col">3362</th><th scope="col">3375</th><th scope="col">合計</th></tr></thead>
         <tbody>
           <tr><td>原始金額</td><td class="num">1,396,185</td><td class="num">280,000</td><td class="num"><b>1,676,185</b></td></tr>
           <tr><td>目前餘額</td><td class="num">1,123,248</td><td class="num">225,253</td><td class="num"><b>1,348,501</b></td></tr>
@@ -387,33 +422,33 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
 
 <!-- ══════════ 投資 ══════════ -->
 <section class="panel" id="p-inv">
-  <div class="sec">
-    <div class="sec-title">投資儀表板總覽</div>
+  <details class="sec" open>
+    <summary class="sec-title">投資儀表板總覽</summary>
     <div class="card">
       <div class="hint" style="margin:0 0 12px">
       這張卡只彙整下面幾張卡片已經算出來的數字，不額外做判斷、不產生「建議買什麼」。所有輸入還是在各自的卡片裡調。
       </div>
       <div id="dashSummary"></div>
     </div>
-  </div>
+  </details>
 
-  <div class="sec">
-    <div class="sec-title">00919 除息策略回測・歷史事實，不是預測</div>
+  <details class="sec">
+    <summary class="sec-title">00919 除息策略回測・歷史事實，不是預測</summary>
     <div class="card">
       <div class="hint" style="margin:0 0 12px">
       13次真實除息事件（2023/06~2026/06），比較「除息前買進、參與除息、抱到填息完成日賣」（Strategy A）vs「提前佈局、除息前賣掉」（Strategy B）。進場點統一是除息月第一個交易日。資料來源：Goodinfo 除權息日程表 + 證交所收盤價，方法在 <code>tools/backtest_00919.py</code>。
       </div>
-      <div id="backtestBox"></div>
+      <div id="backtestBox"><div class="skel"><div class="skel-bar"></div><div class="skel-bar"></div><div class="skel-bar"></div><div class="skel-bar"></div></div></div>
     </div>
-  </div>
+  </details>
 
-  <div class="sec">
-    <div class="sec-title">熱度題材觀察名單・量測位置，不做判斷</div>
+  <details class="sec">
+    <summary class="sec-title">熱度題材觀察名單・量測位置，不做判斷</summary>
     <div class="card">
       <div class="hint" style="margin:0 0 12px">
       這張卡量測 9 檔常被歸類為「瓶頸理論／光通訊」題材股目前在自己過去一年走勢裡的位置：52週區間位階、短中長期報酬、量比、年化波動率。全部是回顧性算術，沒有評分、沒有排序、不代表「還會不會漲」。資料來源：證交所 STOCK_DAY（上市）+ 櫃買中心 tradingStock（上櫃），方法在 <code>tools/fetch_momentum.py</code>。
       </div>
-      <div id="momentumBox"></div>
+      <div id="momentumBox"><div class="skel"><div class="skel-bar"></div><div class="skel-bar"></div><div class="skel-bar"></div><div class="skel-bar"></div></div></div>
       <div class="hint" style="margin-top:14px">
       <b>相關財金期刊理論（僅供參考，非投資建議）：</b><br>
       · Da, Engelberg &amp; Gao (2011, <i>Journal of Finance</i>) — 用 Google 搜尋量量測「關注度」，發現關注度上升預測未來2週股價上漲，但一年內幾乎全數回吐。<br>
@@ -422,10 +457,10 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
       · Barber, Lee, Liu &amp; Odean（台灣全市場資料，<i>Review of Financial Studies</i>）— 台灣散戶因積極追進出場，整體年度虧損約當GDP的2.2%，個別組合落後大盤年化3.8個百分點。
       </div>
     </div>
-  </div>
+  </details>
 
-  <div class="sec">
-    <div class="sec-title">定期定額財富累積試算・存錢邏輯，不綁定特定標的</div>
+  <details class="sec">
+    <summary class="sec-title">定期定額財富累積試算・存錢邏輯，不綁定特定標的</summary>
     <div class="card">
       <div class="hint" style="margin:0 0 12px">
       這張卡不看你買哪一檔，只算「固定金額、固定時間投入」這個機制本身的數學。目的是存錢，不是選股，所以底下沒有任何股票代碼。
@@ -443,30 +478,30 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
       公式：FV = P₀(1+r)ⁿ + PMT×[(1+r)ⁿ−1]/r。定期定額買到的平均成本，數學上是價格的調和平均數，依 AM-HM 不等式恆 ≤ 算術平均價格——這是唯一能證明的優勢，不是報酬保證。
       </div>
     </div>
-  </div>
+  </details>
 
-  <div class="sec">
-    <div class="sec-title">持倉自動追蹤・證交所收盤價</div>
+  <details class="sec">
+    <summary class="sec-title">持倉自動追蹤・證交所收盤價</summary>
     <div class="card">
       <div class="hint" style="margin:0 0 12px">
       每個交易日收盤後（約下午2:30後）由 GitHub Actions 自動抓證交所收盤價回來，不是即時跳動的報價，是每天更新一次。抓不到的時候（連假、API 異常）會顯示上一次成功抓到的資料，不會讓頁面壞掉。
       </div>
-      <div id="holdingsBox"></div>
+      <div id="holdingsBox"><div class="skel"><div class="skel-bar"></div><div class="skel-bar"></div><div class="skel-bar"></div></div></div>
     </div>
-  </div>
+  </details>
 
-  <div class="sec">
-    <div class="sec-title">股票質押槓桿狀況</div>
+  <details class="sec">
+    <summary class="sec-title">股票質押槓桿狀況</summary>
     <div class="card">
       <div class="hint" style="margin:0 0 12px">
       用元大帳戶的 00405A 質押借出現金，這張卡算的是「質押品現值 vs 借款」的即時關係，質押品市值跟上面「持倉自動追蹤」共用同一份收盤價資料。
       </div>
-      <div id="marginBox"><div class="hint">還沒有資料。</div></div>
+      <div id="marginBox"><div class="skel"><div class="skel-bar"></div><div class="skel-bar"></div><div class="skel-bar"></div></div></div>
     </div>
-  </div>
+  </details>
 
-  <div class="sec">
-    <div class="sec-title">投資部位追蹤・以息養貸（B筆轉貸）</div>
+  <details class="sec">
+    <summary class="sec-title">投資部位追蹤・以息養貸（B筆轉貸）</summary>
     <div class="card">
       <div class="hint" style="margin:0 0 12px">
       轉貸多借出來的差額拿去投資，目標是配息長期蓋過這筆貸款的月付。市值會在上面「持倉自動追蹤」抓到資料時自動帶入，抓不到時維持你手動輸入的數字。
@@ -483,10 +518,10 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
         <input type="range" id="invYield" min="3" max="15" step="0.5" value="8"></label>
       <div id="invBox" style="margin-top:13px"></div>
     </div>
-  </div>
+  </details>
 
-  <div class="sec">
-    <div class="sec-title">高股息 ETF 比較・你設權重，不是排名建議</div>
+  <details class="sec">
+    <summary class="sec-title">高股息 ETF 比較・你設權重，不是排名建議</summary>
     <div class="card">
       <div class="hint" style="margin:0 0 12px">
       這裡只算「現金流貼合度」跟「費用率」兩項——都是查得到的客觀數字。殖利率和平準金風險只列出來當參考，沒有折進分數，因為換算成分數會是假精確。改權重看排名怎麼變，這就是重點：沒有唯一正確答案，答案取決於你在乎什麼。
@@ -498,10 +533,10 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
       <div id="etfBox" style="margin-top:13px"></div>
       <div class="hint" style="margin-top:10px">00929 經理費查不到明確數字，無法算進分數，列在表格後面，需要自行查公開說明書補上，不要用缺資料的推測值。</div>
     </div>
-  </div>
+  </details>
 
-  <div class="sec">
-    <div class="sec-title">一塊錢該還債還是進場</div>
+  <details class="sec">
+    <summary class="sec-title">一塊錢該還債還是進場</summary>
     <div class="card">
       <div class="hint" style="margin:0 0 12px">還掉一筆 r% 的貸款，等於拿到一個保證 r%、免稅、零波動的報酬。投資要贏過它，得先跨過這條線。</div>
       <label class="fld"><span class="lb">你對台股長期年化報酬的預期<b id="expLb">7.0%</b></span>
@@ -509,18 +544,18 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
       <svg id="hurdle" viewBox="0 0 400 150" style="width:100%" role="img" aria-label="各筆貸款利率與投資期望報酬比較"></svg>
       <div id="hurdleNote"></div>
     </div>
-  </div>
+  </details>
 
-  <div class="sec">
-    <div class="sec-title">閒錢分配建議</div>
+  <details class="sec">
+    <summary class="sec-title">閒錢分配建議</summary>
     <div class="card">
       <label class="fld"><span class="lb">這個月多出來的錢<b id="freeLb">—</b></span><input type="number" id="free" value="10000" step="1000" min="0"></label>
       <div id="allocBox"></div>
     </div>
-  </div>
+  </details>
 
-  <div class="sec">
-    <div class="sec-title">槓桿疊加警示</div>
+  <details class="sec">
+    <summary class="sec-title">槓桿疊加警示</summary>
     <div class="card">
       <div class="flag f-alarm" style="margin-bottom:11px">
         <span class="dot"></span>
@@ -534,7 +569,7 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
         比較保守的做法是把「還款準備金」與「投資部位」實體分開兩個帳戶，讓帳面波動不會影響繳款能力。
       </div>
     </div>
-  </div>
+  </details>
   <footer>本工具做的是數學，不是建議。實際決策請考量你的工作穩定度、家庭責任與風險承受度，必要時諮詢合格理財或債務顧問。</footer>
 </section>
 
@@ -632,11 +667,11 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
 </main>
 
 <nav>
-  <button data-tab="p-home" aria-current="page"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>總覽</button>
-  <button data-tab="p-debt"><svg viewBox="0 0 24 24"><path d="M3 6h18v12H3z"/><path d="M3 10h18"/><circle cx="7.5" cy="14" r="1.2"/></svg>債務</button>
-  <button data-tab="p-flow"><svg viewBox="0 0 24 24"><path d="M4 18V9M10 18V5M16 18v-6M22 18h-20"/></svg>金流</button>
-  <button data-tab="p-inv"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 7v5h-5"/></svg>投資</button>
-  <button data-tab="p-eng"><svg viewBox="0 0 24 24"><path d="M8 6l-5 6 5 6M16 6l5 6-5 6"/></svg>工程</button>
+  <button data-tab="p-home" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>總覽</button>
+  <button data-tab="p-debt"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12H3z"/><path d="M3 10h18"/><circle cx="7.5" cy="14" r="1.2"/></svg>債務</button>
+  <button data-tab="p-flow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V9M10 18V5M16 18v-6M22 18h-20"/></svg>金流</button>
+  <button data-tab="p-inv"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 7v5h-5"/></svg>投資</button>
+  <button data-tab="p-eng"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6l-5 6 5 6M16 6l5 6-5 6"/></svg>工程</button>
 </nav>
 </div>
 
@@ -755,7 +790,7 @@ function renderCalendar(){
   ];
   const sum = rows.reduce((s,r)=>s+r[3],0);
   $('#calTbl').innerHTML =
-    '<thead><tr><th>日期</th><th>項目</th><th>金額</th></tr></thead><tbody>' +
+    '<thead><tr><th scope="col">日期</th><th scope="col">項目</th><th scope="col">金額</th></tr></thead><tbody>' +
     rows.map(r=>`<tr><td class="num">${r[0]}</td><td>${r[1]}<div style="font-size:10px;color:var(--muted)">${r[2]}</div></td><td class="num">${fmt(r[3])}</td></tr>`).join('') +
     `<tr><td colspan="2"><b>合計</b></td><td class="num"><b>${fmt(sum)}</b></td></tr></tbody>` +
     `<tr><td colspan="3" style="border:0;padding-top:9px"><div class="hint" style="margin:0">8/14 單日、單一帳戶需備妥 <b>21,874</b>，這是月內最大的一次扣款壓力點。</div></td></tr>`;
@@ -835,11 +870,17 @@ function applyStatementDefaults(rows){
 async function loadStatements(){
   try{
     const res = await fetch('./data/statements.json', {cache:'no-store'});
-    if(!res.ok) return;
+    if(!res.ok){
+      $('#statementRows').innerHTML = `<div class="hint">還沒有自動抓到的帳單資料。</div>`;
+      return;
+    }
     const rows = await res.json();
     renderStatements(rows);
     applyStatementDefaults(rows);
-  }catch(e){ /* offline or first load before CI has run once */ }
+  }catch(e){
+    // offline or first load before CI has run once
+    $('#statementRows').innerHTML = `<div class="hint">還沒有自動抓到的帳單資料（可能離線，或 workflow 還沒跑過第一次）。</div>`;
+  }
 }
 
 function renderWaterfall(){
@@ -893,7 +934,7 @@ function renderStrategy(){
     $('#saveCap').innerHTML = `利息少付 <b>${fmt(saved)}</b> 元，提早 <b>${faster}</b> 個月無債（${monthLabel(now.months)}）。${extra>0?`每月多投入 ${fmt(extra)} 元，累計投入 ${fmt(extra*Math.min(now.months, base.months))} 元。`:'完全靠結清後的月付金再投入，不用多掏一毛。'}`;
   }
   $('#stratTbl').innerHTML =
-    '<thead><tr><th>貸款</th><th>維持現狀</th><th>此策略</th></tr></thead><tbody>' +
+    '<thead><tr><th scope="col">貸款</th><th scope="col">維持現狀</th><th scope="col">此策略</th></tr></thead><tbody>' +
     LOANS.map(l=>`<tr><td>${l.name}</td><td class="num" style="color:var(--muted)">${monthLabel(base.payoff[l.id])}</td><td class="num"><b>${monthLabel(now.payoff[l.id])}</b></td></tr>`).join('') +
     '</tbody>';
   renderWaterfall();
@@ -1066,7 +1107,7 @@ function renderDca(){
       <div class="kv"><div class="k">投入本金佔比</div><div class="v">${(contributed/fv*100).toFixed(0)}%</div></div>
     </div>
     <table style="margin-top:12px">
-      <thead><tr><th>年數</th>${rows.map(x=>`<th>${x.y}年</th>`).join('')}</tr></thead>
+      <thead><tr><th scope="col">年數</th>${rows.map(x=>`<th scope="col">${x.y}年</th>`).join('')}</tr></thead>
       <tbody><tr><td>累積資產</td>${rows.map(x=>`<td class="num">${fmt(x.v)}</td>`).join('')}</tr></tbody>
     </table>
     <div class="hint" style="margin-top:8px">這是固定報酬率假設下的數學推算，不是報酬保證——實際市場逐年波動，早期年度本金小、複利效果不明顯，時間拉長後複利成長部分佔比才會顯著超過本金投入。</div>`;
@@ -1099,7 +1140,7 @@ async function loadBacktest(){
         <div class="kv"><div class="k">A 贏 B 次數</div><div class="v">${s.a_beats_b_count} / ${s.events}</div></div>
       </div>
       <table style="margin-top:12px">
-        <thead><tr><th>除息日</th><th>配息</th><th>A報酬</th><th>A填息天數</th><th>B報酬</th></tr></thead>
+        <thead><tr><th scope="col">除息日</th><th scope="col">配息</th><th scope="col">A報酬</th><th scope="col">A填息天數</th><th scope="col">B報酬</th></tr></thead>
         <tbody>
           ${data.events.map(e=>`<tr>
             <td>${e.ex_date}</td>
@@ -1125,7 +1166,7 @@ async function loadMomentum(){
     const errRows = data.stocks.filter(s=>s.error);
     $('#momentumBox').innerHTML = `
       <div class="tbl-scroll"><table>
-        <thead><tr><th></th><th>現價</th><th>52週位階</th><th>距高點</th><th>20日</th><th>60日</th><th>250日</th><th>量比5/60</th><th>年化波動</th></tr></thead>
+        <thead><tr><th scope="col"></th><th scope="col">現價</th><th scope="col">52週位階</th><th scope="col">距高點</th><th scope="col">20日</th><th scope="col">60日</th><th scope="col">250日</th><th scope="col">量比5/60</th><th scope="col">年化波動</th></tr></thead>
         <tbody>
           ${rows.map(s=>`<tr>
             <td>${s.name}<div class="hint" style="margin:0">${s.code}・${s.note}</div></td>
@@ -1171,7 +1212,7 @@ async function loadPrices(){
 
     $('#holdingsBox').innerHTML = `
       <div class="tbl-scroll"><table>
-        <thead><tr><th></th><th>帳戶</th><th>股數</th><th>成本均價</th><th>收盤價</th><th>市值</th><th>帳面損益</th><th>今賣淨損益</th></tr></thead>
+        <thead><tr><th scope="col"></th><th scope="col">帳戶</th><th scope="col">股數</th><th scope="col">成本均價</th><th scope="col">收盤價</th><th scope="col">市值</th><th scope="col">帳面損益</th><th scope="col">今賣淨損益</th></tr></thead>
         <tbody>
           ${lines.map(l=>`<tr>
             <td>${l.code}<br><span style="font-size:10.5px;color:var(--muted)">${l.name}</span></td>
@@ -1215,6 +1256,8 @@ async function loadPrices(){
           `:''}
         </div>
         <div class="hint" style="margin-top:10px">利率 ${(MARGIN_LOAN.interestRate*100).toFixed(2)}%。這筆借出的 ${fmt(MARGIN_LOAN.borrowed)} 已用來買進 ${MARGIN_LOAN.usedFor}，所以元大帳戶是真的槓桿部位，不是單純質押借現金——${pledgedLine.code} 和 ${MARGIN_LOAN.usedFor} 只要有一個跌，維持率同時往下掉，兩者同漲同跌時波動會被放大約 ${leverageRatio!=null?leverageRatio.toFixed(1):'—'} 倍。質押品市值每天變動，維持率跟著變動，掉到券商設定的追繳線會被要求補繳擔保品或部分還款。</div>`;
+    }else{
+      $('#marginBox').innerHTML = `<div class="hint">目前 HOLDINGS 沒有標記 pledged:true 的持股，沒有質押部位可以算。</div>`;
     }
 
     dashState.holdingsTotal = total;
@@ -1232,6 +1275,7 @@ async function loadPrices(){
     }
   }catch(e){
     $('#holdingsBox').innerHTML = `<div class="hint">還沒有自動抓到的股價資料（可能是 workflow 還沒跑過第一次），目前市值維持你在下面手動輸入的數字。</div>`;
+    $('#marginBox').innerHTML = `<div class="hint">還沒有自動抓到的股價資料，質押槓桿狀況需要先有持倉市值才能算。</div>`;
   }
 }
 
@@ -1315,7 +1359,7 @@ function renderEtfCompare(){
 
   $('#etfBox').innerHTML = `
     <table>
-      <thead><tr><th></th><th>配息頻率</th><th>費用率</th><th>殖利率區間</th><th>加權分數</th></tr></thead>
+      <thead><tr><th scope="col"></th><th scope="col">配息頻率</th><th scope="col">費用率</th><th scope="col">殖利率區間</th><th scope="col">加權分數</th></tr></thead>
       <tbody>
         ${rows.map(r=>`<tr>
           <td>${r.code}<br><span style="font-size:10.5px;color:var(--muted)">${r.name}</span></td>
@@ -1453,6 +1497,13 @@ DCA_FIELDS.forEach(id=>$('#'+id).addEventListener('input', ()=>{ saveDcaState();
 /* ══════════════════════════════════════════════
    5. 啟動
    ══════════════════════════════════════════════ */
+const ONBOARD_KEY = 'onboardDismissedV1';
+if(!localStorage.getItem(ONBOARD_KEY)) $('#onboardTip').style.display = '';
+$('#onboardDismiss').addEventListener('click', ()=>{
+  $('#onboardTip').style.display = 'none';
+  try{ localStorage.setItem(ONBOARD_KEY, '1'); }catch(e){}
+});
+
 renderHeader(); renderFlags(); renderCalendar(); renderDebtCards();
 renderStrategy(); renderDSR(); renderHurdle();
 loadStatements();
