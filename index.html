@@ -34,8 +34,31 @@
   --caution-soft:#FBF2DE;
   --violet:#463B96;
   --violet-soft:#EBE9F7;
+  --on-ink:#FFFFFF;
+  --jade-ink:#0A4A3A;
   --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
   --sans:'Noto Sans TC',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#0B1218;
+    --surface:#161F27;
+    --surface-2:#0F171E;
+    --ink:#EDF1F4;
+    --ink-2:#B7C2CC;
+    --muted:#7C8894;
+    --line:#28333D;
+    --jade:#3FCB9A;
+    --jade-soft:#12352A;
+    --alarm:#E8877B;
+    --alarm-soft:#3B1C18;
+    --caution:#E3B454;
+    --caution-soft:#3B2E12;
+    --violet:#9A91DE;
+    --violet-soft:#26224A;
+    --on-ink:#0B1218;
+    --jade-ink:#A9E8D2;
+  }
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
@@ -147,17 +170,19 @@ input[type=range]{width:100%;accent-color:var(--jade)}
 .seg{display:flex;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
 .seg button{flex:1;border:0;background:transparent;padding:8px 4px;border-radius:7px;
   font-family:var(--sans);font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer}
-.seg button[aria-pressed=true]{background:var(--ink);color:#fff}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--on-ink)}
 
 .result{background:var(--jade-soft);border-radius:12px;padding:13px;margin-top:12px}
 .result .big{font-family:var(--mono);font-size:26px;font-weight:600;color:var(--jade);font-variant-numeric:tabular-nums}
-.result .cap{font-size:11px;color:#0A4A3A;margin-top:3px;line-height:1.6}
+.result .cap{font-size:11px;color:var(--jade-ink);margin-top:3px;line-height:1.6}
 
 table{width:100%;border-collapse:collapse;font-size:12.5px}
-th,td{padding:8px 4px;text-align:right;border-bottom:1px solid var(--line)}
-th:first-child,td:first-child{text-align:left}
+th,td{padding:8px 4px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left;white-space:normal}
 th{font-size:10.5px;color:var(--muted);font-weight:500;letter-spacing:.05em}
 td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -15px;padding:0 15px}
+.tbl-scroll table{width:max-content;min-width:100%}
 
 /* budget bars */
 .bud{margin-top:11px}
@@ -1099,7 +1124,7 @@ async function loadMomentum(){
     const rows = data.stocks.filter(s=>!s.error);
     const errRows = data.stocks.filter(s=>s.error);
     $('#momentumBox').innerHTML = `
-      <table>
+      <div class="tbl-scroll"><table>
         <thead><tr><th></th><th>現價</th><th>52週位階</th><th>距高點</th><th>20日</th><th>60日</th><th>250日</th><th>量比5/60</th><th>年化波動</th></tr></thead>
         <tbody>
           ${rows.map(s=>`<tr>
@@ -1114,9 +1139,9 @@ async function loadMomentum(){
             <td class="num">${s.annualised_vol_pct}%</td>
           </tr>`).join('')}
         </tbody>
-      </table>
+      </table></div>
       ${errRows.length?`<div class="hint" style="margin-top:8px">${errRows.map(e=>`${e.name}（${e.code}）：${e.error}`).join('；')}</div>`:''}
-      <div class="hint" style="margin-top:8px">資料日期：${data.generated_at}。位階高不代表要漲，位階低不代表被低估——本身沒有方向性含義。</div>`;
+      <div class="hint" style="margin-top:8px">資料日期：${data.generated_at}。位階高不代表要漲，位階低不代表被低估——本身沒有方向性含義。表格可左右滑動看完整欄位。</div>`;
   }catch(e){
     $('#momentumBox').innerHTML = `<div class="hint">還沒有量測資料，需先在 GitHub Actions 執行一次「Measure watchlist momentum」。</div>`;
   }
@@ -1145,7 +1170,7 @@ async function loadPrices(){
     });
 
     $('#holdingsBox').innerHTML = `
-      <table>
+      <div class="tbl-scroll"><table>
         <thead><tr><th></th><th>帳戶</th><th>股數</th><th>成本均價</th><th>收盤價</th><th>市值</th><th>帳面損益</th><th>今賣淨損益</th></tr></thead>
         <tbody>
           ${lines.map(l=>`<tr>
@@ -1159,7 +1184,7 @@ async function loadPrices(){
             <td class="num" style="color:${l.netPnl>=0?'var(--jade)':'var(--alarm)'}">${l.netPnl>=0?'+':''}${fmt(l.netPnl)}</td>
           </tr>`).join('')}
         </tbody>
-      </table>
+      </table></div>
       <div class="hint" style="margin-top:8px">${allFound
         ? `合計市值 ${fmt(total)}，資料日期 ${asOf||'—'}。已自動帶入下面「投資部位追蹤」的目前市值欄位。`
         : '部分持倉抓不到收盤價（可能是還沒跑過第一次、連假、或代碼查無資料），該筆先用成本價估算，實際市值請自行核對。'}
