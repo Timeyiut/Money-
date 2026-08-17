@@ -30,8 +30,10 @@ PAIRS = [
     ("--ink-2", "--surface", 4.5, "secondary text on card"),
     ("--muted", "--surface", 4.5, "muted/hint text on card"),
     ("--muted", "--surface-2", 4.5, "muted/hint text on page background"),
-    ("--jade", "--surface", 3.0, "positive number (large/tabular) on card"),
-    ("--alarm", "--surface", 3.0, "negative number (large/tabular) on card"),
+    ("--gain", "--surface", 3.0, "gain number (TW convention: red) on card"),
+    ("--loss", "--surface", 3.0, "loss number (TW convention: green) on card"),
+    ("--jade", "--surface", 3.0, "generic safe/good status on card"),
+    ("--alarm", "--surface", 3.0, "generic warning/urgent status on card"),
     ("--caution", "--surface", 3.0, "caution number on card"),
     ("--violet", "--surface", 3.0, "violet accent on card"),
     ("--jade", "--jade-soft", 3.0, "big result number on jade-soft panel"),
@@ -67,15 +69,20 @@ def contrast_ratio(hex_a: str, hex_b: str) -> float:
     return (lighter + 0.05) / (darker + 0.05)
 
 
-def parse_tokens(block: str) -> dict[str, str]:
+def parse_hex_tokens(block: str) -> dict[str, str]:
     return dict(re.findall(r"(--[\w-]+)\s*:\s*(#[0-9A-Fa-f]{3,6})\s*;", block))
+
+
+def parse_var_aliases(block: str) -> list[tuple[str, str]]:
+    """(--token, --referenced-token) pairs, e.g. --gain:var(--alarm);"""
+    return re.findall(r"(--[\w-]+)\s*:\s*var\((--[\w-]+)\)\s*;", block)
 
 
 def extract_light_tokens(css: str) -> dict[str, str]:
     m = re.search(r":root\{(.*?)\}", css, re.DOTALL)
     if not m:
         raise SystemExit("Could not find :root{...} block in index.html")
-    return parse_tokens(m.group(1))
+    return parse_hex_tokens(m.group(1))
 
 
 def extract_dark_tokens(css: str) -> dict[str, str]:
@@ -84,13 +91,22 @@ def extract_dark_tokens(css: str) -> dict[str, str]:
     )
     if not m:
         raise SystemExit("Could not find the dark-mode :root override block")
-    return parse_tokens(m.group(1))
+    return parse_hex_tokens(m.group(1))
 
 
-def run_theme(name: str, tokens: dict[str, str], light_tokens: dict[str, str]) -> bool:
+def run_theme(
+    name: str, tokens: dict[str, str], light_tokens: dict[str, str], var_aliases: list[tuple[str, str]]
+) -> bool:
     # Dark override is a partial set — anything it doesn't redefine still
     # comes from the light :root, since CSS custom properties cascade.
     merged = {**light_tokens, **tokens}
+    # Aliases (--gain:var(--alarm);) resolve against the *merged* set, same
+    # as real CSS custom-property resolution: --gain isn't redefined in the
+    # dark block, but it tracks --alarm's dark value anyway because var()
+    # resolves live against whatever --alarm currently is in that cascade.
+    for var_name, ref in var_aliases:
+        if ref in merged:
+            merged[var_name] = merged[ref]
     print(f"\n=== {name} ===")
     all_pass = True
     for fg, bg, min_ratio, label in PAIRS:
@@ -112,9 +128,12 @@ def main() -> int:
     css = INDEX_HTML.read_text(encoding="utf-8")
     light = extract_light_tokens(css)
     dark = extract_dark_tokens(css)
+    # Aliases are declared once in :root (e.g. --gain:var(--alarm);) and
+    # never redeclared in the dark block, so scan the whole style block.
+    var_aliases = parse_var_aliases(css)
 
-    ok_light = run_theme("light (default)", {}, light)
-    ok_dark = run_theme("dark (prefers-color-scheme)", dark, light)
+    ok_light = run_theme("light (default)", {}, light, var_aliases)
+    ok_dark = run_theme("dark (prefers-color-scheme)", dark, light, var_aliases)
 
     print()
     if ok_light and ok_dark:

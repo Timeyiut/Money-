@@ -36,6 +36,13 @@
   --violet-soft:#EBE9F7;
   --on-ink:#FFFFFF;
   --jade-ink:#0A4A3A;
+  /* 台灣證券慣例：漲/賺=紅，跌/賠=綠（跟前面的 jade=好/alarm=警示 是
+     兩套獨立語意——jade/alarm 用在風險燈號、警示卡這類「好/壞」判斷，
+     不代表方向；gain/loss 只用在報酬率、損益這種有正負號的金融數字，
+     顏色要跟你天天在看的券商 App 一致，不是套用西方的綠漲紅跌）。
+     引用既有色票而非另建色階，深色模式會跟著 --alarm/--jade 自動換色。 */
+  --gain:var(--alarm);
+  --loss:var(--jade);
   --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
   --sans:'Noto Sans TC',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
@@ -263,7 +270,7 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
       <div style="font-weight:700;font-size:13px;margin-bottom:4px;color:var(--ink)">第一次使用？</div>
       <div class="hint" style="margin:0">下面 5 個頁籤：<b>總覽</b> 看總負債，<b>債務</b> 管理每筆貸款和帳單，<b>金流</b> 抓月預算，<b>投資</b> 是試算工具（不是推薦股票，每張卡自己調參數），<b>工程</b> 是這個 App 的技術說明。所有資料存在你的裝置和這個 GitHub repo，沒有後端、不上傳。</div>
     </div>
-    <button id="onboardDismiss" aria-label="關閉說明" style="flex:none;border:0;background:none;color:var(--muted);font-size:18px;line-height:1;cursor:pointer;padding:2px 4px">×</button>
+    <button id="onboardDismiss" aria-label="關閉說明" style="flex:none;border:0;background:none;color:var(--muted);font-size:18px;line-height:1;cursor:pointer;padding:11px;margin:-11px -11px 0 0">×</button>
   </div>
 </div>
 
@@ -1134,7 +1141,7 @@ async function loadBacktest(){
     const s = data.summary;
     $('#backtestBox').innerHTML = `
       <div class="debt-rows" style="padding-top:0">
-        <div class="kv"><div class="k">Strategy A 平均報酬</div><div class="v" style="font-size:20px;color:var(--jade)">+${s.strategy_a_avg_return_pct}%</div></div>
+        <div class="kv"><div class="k">Strategy A 平均報酬</div><div class="v" style="font-size:20px;color:var(--gain)">+${s.strategy_a_avg_return_pct}%</div></div>
         <div class="kv"><div class="k">Strategy B 平均報酬</div><div class="v" style="font-size:20px">+${s.strategy_b_avg_return_pct}%</div></div>
         <div class="kv"><div class="k">A 勝率</div><div class="v">${s.strategy_a_win_rate_pct}%</div></div>
         <div class="kv"><div class="k">A 贏 B 次數</div><div class="v">${s.a_beats_b_count} / ${s.events}</div></div>
@@ -1145,9 +1152,9 @@ async function loadBacktest(){
           ${data.events.map(e=>`<tr>
             <td>${e.ex_date}</td>
             <td class="num">${e.dividend}</td>
-            <td class="num" style="color:${e.strategy_a_return_pct>=0?'var(--jade)':'var(--alarm)'}">${e.strategy_a_return_pct>=0?'+':''}${e.strategy_a_return_pct}%</td>
+            <td class="num" style="color:${e.strategy_a_return_pct>=0?'var(--gain)':'var(--loss)'}">${e.strategy_a_return_pct>=0?'+':''}${e.strategy_a_return_pct}%</td>
             <td class="num">${e.strategy_a_fill_days}天</td>
-            <td class="num" style="color:${e.strategy_b_return_pct>=0?'var(--jade)':'var(--alarm)'}">${e.strategy_b_return_pct>=0?'+':''}${e.strategy_b_return_pct}%</td>
+            <td class="num" style="color:${e.strategy_b_return_pct>=0?'var(--gain)':'var(--loss)'}">${e.strategy_b_return_pct>=0?'+':''}${e.strategy_b_return_pct}%</td>
           </tr>`).join('')}
         </tbody>
       </table>
@@ -1173,9 +1180,9 @@ async function loadMomentum(){
             <td class="num">${s.last_close}</td>
             <td class="num">${s.range_position_pct!=null?s.range_position_pct+'%':'—'}</td>
             <td class="num">${s.below_high_pct}%</td>
-            <td class="num" style="color:${s.return_20d_pct>=0?'var(--jade)':'var(--alarm)'}">${s.return_20d_pct>=0?'+':''}${s.return_20d_pct}%</td>
-            <td class="num" style="color:${s.return_60d_pct>=0?'var(--jade)':'var(--alarm)'}">${s.return_60d_pct>=0?'+':''}${s.return_60d_pct}%</td>
-            <td class="num">${s.return_250d_pct!=null?(s.return_250d_pct>=0?'+':'')+s.return_250d_pct+'%':'—'}</td>
+            <td class="num" style="color:${s.return_20d_pct>=0?'var(--gain)':'var(--loss)'}">${s.return_20d_pct>=0?'+':''}${s.return_20d_pct}%</td>
+            <td class="num" style="color:${s.return_60d_pct>=0?'var(--gain)':'var(--loss)'}">${s.return_60d_pct>=0?'+':''}${s.return_60d_pct}%</td>
+            <td class="num" style="color:${s.return_250d_pct==null?'':(s.return_250d_pct>=0?'var(--gain)':'var(--loss)')}">${s.return_250d_pct!=null?(s.return_250d_pct>=0?'+':'')+s.return_250d_pct+'%':'—'}</td>
             <td class="num">${s.volume_ratio_5d_60d ?? '—'}</td>
             <td class="num">${s.annualised_vol_pct}%</td>
           </tr>`).join('')}
@@ -1221,8 +1228,8 @@ async function loadPrices(){
             <td class="num">${l.cost.toFixed(2)}</td>
             <td class="num">${l.price!=null?l.price.toFixed(2):'抓不到'}</td>
             <td class="num">${fmt(l.value)}</td>
-            <td class="num" style="color:${l.pnl>=0?'var(--jade)':'var(--alarm)'}">${l.pnl>=0?'+':''}${fmt(l.pnl)}</td>
-            <td class="num" style="color:${l.netPnl>=0?'var(--jade)':'var(--alarm)'}">${l.netPnl>=0?'+':''}${fmt(l.netPnl)}</td>
+            <td class="num" style="color:${l.pnl>=0?'var(--gain)':'var(--loss)'}">${l.pnl>=0?'+':''}${fmt(l.pnl)}</td>
+            <td class="num" style="color:${l.netPnl>=0?'var(--gain)':'var(--loss)'}">${l.netPnl>=0?'+':''}${fmt(l.netPnl)}</td>
           </tr>`).join('')}
         </tbody>
       </table></div>
@@ -1393,7 +1400,7 @@ function renderDashboardSummary(){
       <div class="kv"><div class="k">距離覆蓋月付還差</div><div class="v" style="font-size:18px">${gap<=0?'已達成':fmt(gap)}</div></div>
       ${hasHoldings ? `
       <div class="kv"><div class="k">持倉自動追蹤市值${holdingsAllFound?'':'（部分估算）'}</div><div class="v" style="font-size:18px">${fmt(holdingsTotal)}</div></div>
-      <div class="kv"><div class="k">持倉損益（收盤價 ${holdingsAsOf||'—'}）</div><div class="v" style="font-size:18px;color:${holdingsPnl>=0?'var(--jade)':'var(--alarm)'}">${holdingsPnl>=0?'+':''}${fmt(holdingsPnl)}</div></div>
+      <div class="kv"><div class="k">持倉損益（收盤價 ${holdingsAsOf||'—'}）</div><div class="v" style="font-size:18px;color:${holdingsPnl>=0?'var(--gain)':'var(--loss)'}">${holdingsPnl>=0?'+':''}${fmt(holdingsPnl)}</div></div>
       ` : ''}
       ${marginBorrowed!=null ? `
       <div class="kv"><div class="k">股票質押借款</div><div class="v" style="font-size:18px">${fmt(marginBorrowed)}</div></div>
