@@ -38,7 +38,7 @@ def draw(size, pad_ratio, radius_ratio, bg=INK):
 
 
 if __name__ == "__main__":
-    out = "/home/claude/finguard/icons"
+    out = "./icons"
     # standard icons: tight padding, iOS-ish squircle radius
     for n in (180, 192, 512):
         draw(n, 0.20, 0.22).save(f"{out}/icon-{n}.png")
