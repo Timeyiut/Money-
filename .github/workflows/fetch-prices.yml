@@ -2,10 +2,15 @@ name: Fetch stock prices
 
 on:
   schedule:
-    # 21:00 Taipei (13:00 UTC), weekdays only. Market closes 13:30, but a
-    # 16:00 Taipei run was verified on 2026-08-14 to still return the
-    # *previous* day's close — these OpenAPI daily files publish late in
-    # the evening, not right after the bell.
+    # 13:45 Taipei (05:45 UTC), weekdays — 15 min after the 13:30 bell.
+    # Primary source is now Yahoo's chart API (tools/fetch_prices.py),
+    # which carries the live/closing tick directly rather than waiting for
+    # an end-of-day bulk file, so this run is expected to land the actual
+    # close, not yesterday's.
+    - cron: "45 5 * * 1-5"
+    # 21:00 Taipei (13:00 UTC) — backup pass. Catches cases where the
+    # 13:45 run hit a transient failure, or where a source revises its
+    # number later in the day (dividend/split adjustments).
     - cron: "0 13 * * 1-5"
   workflow_dispatch:
 
