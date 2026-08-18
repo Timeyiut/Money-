@@ -450,6 +450,16 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
   </details>
 
   <details class="sec">
+    <summary class="sec-title">00631L 均線交叉回測・歷史事實，不是訊號</summary>
+    <div class="card">
+      <div class="hint" style="margin:0 0 12px">
+      機械式規則：20日均線與60日均線交叉（黃金交叉／死亡交叉），量測交叉當天之後 5/10/20/60 個交易日的報酬率。規則固定、不挑選事件，避免用後見之明選出漂亮的例子。00631L 是每日重設的2倍槓桿ETF，波動耗損已經包含在真實收盤價裡，不需要另外計算。資料來源：證交所 STOCK_DAY，方法在 <code>tools/backtest_00631L.py</code>。
+      </div>
+      <div id="backtest631Box"><div class="skel"><div class="skel-bar"></div><div class="skel-bar"></div><div class="skel-bar"></div><div class="skel-bar"></div></div></div>
+    </div>
+  </details>
+
+  <details class="sec">
     <summary class="sec-title">熱度題材觀察名單・量測位置，不做判斷</summary>
     <div class="card">
       <div class="hint" style="margin:0 0 12px">
@@ -1182,6 +1192,39 @@ async function loadBacktest(){
   }
 }
 
+async function loadBacktest631(){
+  try{
+    const res = await fetch('./data/backtest_00631L.json', {cache:'no-store'});
+    if(!res.ok) throw new Error('no data yet');
+    const data = await res.json();
+    const g = data.golden_cross, d = data.death_cross;
+    const row = (label, s) => `
+      <tr>
+        <td>${label}</td>
+        <td class="num">${s.events}</td>
+        ${[5,10,20,60].map(h=>{
+          const v = s[`avg_return_${h}d_pct`];
+          return `<td class="num" style="color:${v==null?'':(v>=0?'var(--gain)':'var(--loss)')}">${v==null?'—':(v>=0?'+':'')+v+'%'}</td>`;
+        }).join('')}
+      </tr>`;
+    $('#backtest631Box').innerHTML = `
+      <div class="tbl-scroll"><table>
+        <thead><tr><th scope="col">交叉類型</th><th scope="col">次數</th><th scope="col">5日</th><th scope="col">10日</th><th scope="col">20日</th><th scope="col">60日</th></tr></thead>
+        <tbody>${row('黃金交叉後平均報酬', g)}${row('死亡交叉後平均報酬', d)}</tbody>
+      </table></div>
+      <table style="margin-top:10px">
+        <thead><tr><th scope="col">交叉類型</th><th scope="col">20日勝率</th><th scope="col">60日勝率</th></tr></thead>
+        <tbody>
+          <tr><td>黃金交叉</td><td class="num">${g.win_rate_20d_pct??'—'}%</td><td class="num">${g.win_rate_60d_pct??'—'}%</td></tr>
+          <tr><td>死亡交叉</td><td class="num">${d.win_rate_20d_pct??'—'}%</td><td class="num">${d.win_rate_60d_pct??'—'}%</td></tr>
+        </tbody>
+      </table>
+      <div class="hint" style="margin-top:8px">歷史區間：${data.history_range.from} ~ ${data.history_range.to}（共 ${data.history_range.trading_days} 個交易日）。樣本數（次數欄）如果只有個位數，統計上不足以下任何結論——這是回顧過去發生過幾次、平均結果如何，不是「下次交叉會怎樣」的預測，也沒有考慮交易成本和稅。</div>`;
+  }catch(e){
+    $('#backtest631Box').innerHTML = `<div class="hint">還沒有回測資料，需先在 GitHub Actions 執行一次「Backtest 00631L MA crossover signals」。</div>`;
+  }
+}
+
 async function loadMomentum(){
   try{
     const res = await fetch('./data/momentum.json', {cache:'no-store'});
@@ -1538,6 +1581,7 @@ renderEtfCompare();
 loadDcaState(); renderDca();
 loadPrices();
 loadBacktest();
+loadBacktest631();
 loadMomentum();
 </script>
 
