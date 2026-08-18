@@ -858,6 +858,11 @@ const CC_BANK_RULES = [
 
 function applyStatementDefaults(rows){
   if(!rows || !rows.length) return;
+  // 你手動改過的金流欄位（存在 localStorage 裡）優先於信箱自動抓到的帳單金額——
+  // 不然每次重新整理，這裡都會把你剛存的水電費之類數字蓋回信箱裡的舊帳單金額，
+  // 感覺就像「改了又被恢復成別的值」。只有完全沒動過這張卡片的全新使用者才會
+  // 套用信箱自動帶入。
+  if(localStorage.getItem('budgetInputs')) return;
   CC_BANK_RULES.forEach(rule=>{
     const candidates = rows
       .filter(r => rule.match(r) && r.amount)
@@ -1054,6 +1059,19 @@ function renderEF(){
       ? '預備金充足。在有貸款的情況下，這是讓你不必在市場低點賣股繳款的那道牆。'
       : `距離目標還差 ${fmt(Math.max(target-cash,0))} 元。有貸款的人比沒貸款的人更需要這筆錢——因為繳款日不會因為你手頭緊就延後。`}</div>`;
   renderAlloc();
+}
+
+const BUDGET_FIELDS = ['income','ccSino','ccDbs','ccTs','rent','ins','cash','free','exp'];
+function loadBudgetState(){
+  try{
+    const saved = JSON.parse(localStorage.getItem('budgetInputs')||'{}');
+    BUDGET_FIELDS.forEach(id=>{ if(saved[id]!=null && $('#'+id)) $('#'+id).value = saved[id]; });
+  }catch(e){}
+}
+function saveBudgetState(){
+  const state = {};
+  BUDGET_FIELDS.forEach(id=>{ const el=$('#'+id); if(el) state[id]=el.value; });
+  try{ localStorage.setItem('budgetInputs', JSON.stringify(state)); }catch(e){}
 }
 
 const INV_FIELDS = ['invPrincipal','invMonthly','invValue','invRecentDiv','invYield'];
@@ -1492,11 +1510,11 @@ $$('.seg button').forEach(b=>b.onclick=()=>{
   renderStrategy();
 });
 $('#extra').oninput = renderStrategy;
-$('#income').oninput = ()=>{ renderDSR(); };
-['#ccSino','#ccDbs','#ccTs','#rent','#ins'].forEach(s=>$(s).oninput = renderBudget);
-$('#cash').oninput = renderEF;
-$('#free').oninput = renderAlloc;
-$('#exp').oninput = ()=>{ renderHurdle(); renderAlloc(); };
+$('#income').oninput = ()=>{ saveBudgetState(); renderDSR(); };
+['#ccSino','#ccDbs','#ccTs','#rent','#ins'].forEach(s=>$(s).oninput = ()=>{ saveBudgetState(); renderBudget(); });
+$('#cash').oninput = ()=>{ saveBudgetState(); renderEF(); };
+$('#free').oninput = ()=>{ saveBudgetState(); renderAlloc(); };
+$('#exp').oninput = ()=>{ saveBudgetState(); renderHurdle(); renderAlloc(); };
 INV_FIELDS.forEach(id=>$('#'+id).addEventListener('input', ()=>{ saveInvState(); renderInvest(); }));
 ['#wCash','#wCost'].forEach(s=>$(s).oninput = renderEtfCompare);
 DCA_FIELDS.forEach(id=>$('#'+id).addEventListener('input', ()=>{ saveDcaState(); renderDca(); }));
@@ -1511,6 +1529,7 @@ $('#onboardDismiss').addEventListener('click', ()=>{
   try{ localStorage.setItem(ONBOARD_KEY, '1'); }catch(e){}
 });
 
+loadBudgetState();
 renderHeader(); renderFlags(); renderCalendar(); renderDebtCards();
 renderStrategy(); renderDSR(); renderHurdle();
 loadStatements();
