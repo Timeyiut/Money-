@@ -72,6 +72,32 @@ def sma(values: list[float], window: int, i: int) -> float | None:
     return sum(values[i + 1 - window : i + 1]) / window
 
 
+def split_adjust(dates: list[str], closes: list[float]) -> tuple[list[float], list[dict]]:
+    """Detects and back-adjusts corporate-action price jumps (splits,
+    reverse splits, unit consolidations) that TWSE's raw STOCK_DAY closes
+    don't retroactively correct for -- confirmed the hard way: 00631L did
+    a 1-for-17 split around 2026-04, and the raw daily closes just show a
+    cliff from ~180-300 down to ~20 with nothing marking it as a split.
+    A single-day ratio this far outside plausible daily trading range
+    (even for a 2x leveraged ETF, which can move harder than the
+    underlying but not this hard) is a corporate action, not a real price
+    move. Back-adjusting scales every price *before* the jump by the
+    jump's ratio, matching how split-adjusted charts work everywhere
+    else, so moving averages and % returns computed across the boundary
+    aren't corrupted by a fake cliff."""
+    adjusted = list(closes)
+    splits = []
+    for i in range(1, len(adjusted)):
+        if adjusted[i - 1] <= 0:
+            continue
+        ratio = adjusted[i] / adjusted[i - 1]
+        if ratio < 0.3 or ratio > 3.0:
+            splits.append({"date": dates[i], "ratio": ratio})
+            for j in range(i):
+                adjusted[j] *= ratio
+    return adjusted, splits
+
+
 def main() -> int:
     # 00631L listed 2014-10-31; ~6 years of history gives a reasonable
     # sample of crossovers without an unreasonably long CI fetch.
@@ -96,6 +122,10 @@ def main() -> int:
     if n < SLOW + max(HORIZONS) + 5:
         print(f"Not enough history ({n} trading days) to backtest.", file=sys.stderr)
         return 1
+
+    closes, splits = split_adjust(dates, closes)
+    for s in splits:
+        print(f"detected split/consolidation at {s['date']}: ratio {s['ratio']:.3f} — adjusted prior history", file=sys.stderr)
 
     fast_sma = [sma(closes, FAST, i) for i in range(n)]
     slow_sma = [sma(closes, SLOW, i) for i in range(n)]
@@ -123,7 +153,7 @@ def main() -> int:
             {
                 "date": dates[i],
                 "type": "golden" if golden else "death",
-                "close": entry_price,
+                "close": round(entry_price, 2),
                 "forward_return_pct": forward,
             }
         )
@@ -147,7 +177,8 @@ def main() -> int:
         "stock": STOCK_NO,
         "signal": f"{FAST}日均線 vs {SLOW}日均線 交叉（機械式規則，非判斷）",
         "history_range": {"from": dates[0], "to": dates[-1], "trading_days": n},
-        "source": "TWSE STOCK_DAY 官方日收盤價",
+        "source": "TWSE STOCK_DAY 官方日收盤價（分割前價格已依偵測到的分割比例調整，見 splits_adjusted）",
+        "splits_adjusted": splits,
         "disclaimer": (
             "全部為歷史事件的回顧統計，樣本數有限（見 events 欄位），"
             "不是訊號、不是預測、不是進出場建議。"
