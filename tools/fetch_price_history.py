@@ -45,14 +45,27 @@ SYMBOLS = [
     ("3289", "宜特", "上櫃"),
 ]
 
-YEARS_BACK = 3
+YEARS_BACK = 2  # was 3; a live run at 3 took >15min and got cancelled --
+                # 2 years (~490 trading days) is still far more than the
+                # 70 days any one practice round needs, at ~2/3 the requests
 OUT_PATH = "data/price_history.json"
+REQUEST_TIMEOUT = 8  # was 25 -- with ~260 requests in this script, a slow
+                     # endpoint eating 25s each is what actually blew the
+                     # runtime past 15 minutes; fail fast instead
+MAX_ATTEMPTS = 1  # no retry: a month that fails just leaves a gap in that
+                  # symbol's series (fine for a practice tool), instead of
+                  # doubling the worst-case wall-clock time for a retry
+                  # that's unlikely to succeed if the first try timed out
+
+
+def fetch_json(url: str) -> dict:
+    with urlopen(Request(url, headers=HEADERS), timeout=REQUEST_TIMEOUT) as resp:
+        return json.loads(resp.read())
 
 
 def fetch_twse_month(code: str, ym: str) -> list[dict]:
     url = f"https://www.twse.com.tw/rwd/zh/afterTrading/STOCK_DAY?date={ym}&stockNo={code}&response=json"
-    with urlopen(Request(url, headers=HEADERS), timeout=25) as resp:
-        data = json.loads(resp.read())
+    data = fetch_json(url)
     if data.get("stat") != "OK":
         return []
     rows = []
@@ -72,8 +85,7 @@ def fetch_twse_month(code: str, ym: str) -> list[dict]:
 def fetch_tpex_month(code: str, ym: str) -> list[dict]:
     d = f"{ym[:4]}/{ym[4:6]}/01"
     url = f"https://www.tpex.org.tw/www/zh-tw/afterTrading/tradingStock?code={code}&date={d}&id=&response=json"
-    with urlopen(Request(url, headers=HEADERS), timeout=25) as resp:
-        data = json.loads(resp.read())
+    data = fetch_json(url)
     raw_rows = []
     for table in data.get("tables", []) or []:
         raw_rows.extend(table.get("data", []) or [])
@@ -130,8 +142,8 @@ def fetch_series(code: str, market: str, months: int) -> list[dict]:
             for row in fetch(code, ym):
                 by_date[row["date"]] = row["close"]
         except Exception as e:  # noqa: BLE001
-            print(f"warn: {code} {ym}: {e}", file=sys.stderr)
-        time.sleep(0.25)
+            print(f"warn: {code} {ym}: {e}", file=sys.stderr, flush=True)
+        time.sleep(0.15)
 
     dates = sorted(by_date)
     closes = split_adjust(dates, [by_date[d] for d in dates])
@@ -141,9 +153,11 @@ def fetch_series(code: str, market: str, months: int) -> list[dict]:
 def main() -> int:
     out = {}
     for code, name, market in SYMBOLS:
+        t0 = time.time()
+        print(f"fetching {code} {name} ({market})...", file=sys.stderr, flush=True)
         series = fetch_series(code, market, YEARS_BACK * 12)
         out[code] = {"name": name, "market": market, "series": series}
-        print(f"{code} {name}: {len(series)} trading days")
+        print(f"{code} {name}: {len(series)} trading days ({time.time()-t0:.1f}s)", flush=True)
 
     payload = {"generated_at": date.today().isoformat(), "years_back": YEARS_BACK, "symbols": out}
     with open(OUT_PATH, "w", encoding="utf-8") as f:
