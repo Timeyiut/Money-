@@ -191,6 +191,13 @@ input[type=range]{width:100%;accent-color:var(--jade)}
   font-family:var(--sans);font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer}
 .seg button[aria-pressed=true]{background:var(--ink);color:var(--on-ink)}
 
+.btn{flex:1;border:1px solid var(--line);border-radius:10px;padding:11px 8px;
+  font-family:var(--sans);font-size:13px;font-weight:700;background:var(--surface-2);
+  color:var(--ink);cursor:pointer}
+.btn:active{background:var(--line)}
+.btn-ghost{flex:none;border:0;background:none;color:var(--muted);font-size:11.5px;
+  text-decoration:underline;cursor:pointer;padding:4px 0}
+
 .result{background:var(--jade-soft);border-radius:12px;padding:13px;margin-top:12px}
 .result .big{font-family:var(--mono);font-size:26px;font-weight:600;color:var(--jade);font-variant-numeric:tabular-nums}
 .result .cap{font-size:11px;color:var(--jade-ink);margin-top:3px;line-height:1.6}
@@ -456,6 +463,25 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
       機械式規則：20日均線與60日均線交叉（黃金交叉／死亡交叉），量測交叉當天之後 5/10/20/60 個交易日的報酬率。規則固定、不挑選事件，避免用後見之明選出漂亮的例子。00631L 是每日重設的2倍槓桿ETF，波動耗損已經包含在真實收盤價裡，不需要另外計算。資料來源：證交所 STOCK_DAY，方法在 <code>tools/backtest_00631L.py</code>。
       </div>
       <div id="backtest631Box"><div class="skel"><div class="skel-bar"></div><div class="skel-bar"></div><div class="skel-bar"></div><div class="skel-bar"></div></div></div>
+    </div>
+  </details>
+
+  <details class="sec">
+    <summary class="sec-title">情境模擬練習・練習判斷，不是即時交易</summary>
+    <div class="card">
+      <div class="hint" style="margin:0 0 12px">
+      隨機抽一個歷史時間點，只給你那天以前 60 個交易日的走勢，你判斷「會買進」還是「觀望」，按下去才會顯示 10 個交易日後實際發生的事。標的代碼在判斷前刻意隱藏，避免你認出公司、用記憶裡的後續走勢作弊。這是練習看圖判斷的手感，資料庫裡沒有「現在」這一題，只有已經發生過的歷史，不是即時交易，也不是這個 App 在告訴你該不該買。
+      </div>
+      <svg id="practiceChart" viewBox="0 0 400 140" style="width:100%" role="img" aria-label="情境模擬練習歷史走勢圖"></svg>
+      <div id="practiceLabel" class="hint" style="margin-top:8px"></div>
+      <div id="practiceButtons" style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn" id="practiceBuy">會買進</button>
+        <button class="btn" id="practicePass">觀望</button>
+      </div>
+      <div id="practiceResult"></div>
+      <button class="btn" id="practiceNext" style="display:none;margin-top:10px">下一題</button>
+      <div id="practiceStats" class="hint" style="margin-top:10px"></div>
+      <button class="btn-ghost" id="practiceReset">清除練習紀錄</button>
     </div>
   </details>
 
@@ -1225,6 +1251,123 @@ async function loadBacktest631(){
   }
 }
 
+/* ---------- 情境模擬練習 ---------- */
+const PRACTICE_LOOKBACK = 60, PRACTICE_HORIZON = 10;
+let practiceHistory = null, practiceRound = null;
+
+async function loadPriceHistory(){
+  try{
+    const res = await fetch('./data/price_history.json', {cache:'no-store'});
+    if(!res.ok) throw new Error('no data yet');
+    practiceHistory = await res.json();
+    renderPracticeStats();
+    startPracticeRound();
+  }catch(e){
+    $('#practiceChart').style.display = 'none';
+    $('#practiceButtons').style.display = 'none';
+    $('#practiceResult').innerHTML = `<div class="hint">還沒有歷史資料，需先在 GitHub Actions 執行一次「Fetch price history for scenario practice」。</div>`;
+    renderPracticeStats();
+  }
+}
+
+function pickPracticeRound(){
+  const codes = Object.keys(practiceHistory.symbols);
+  for(let attempt=0; attempt<20; attempt++){
+    const code = codes[Math.floor(Math.random()*codes.length)];
+    const sym = practiceHistory.symbols[code];
+    const series = sym.series;
+    if(!series || series.length < PRACTICE_LOOKBACK + PRACTICE_HORIZON + 5) continue;
+    const minIdx = PRACTICE_LOOKBACK - 1;
+    const maxIdx = series.length - 1 - PRACTICE_HORIZON;
+    if(maxIdx <= minIdx) continue;
+    const idx = minIdx + Math.floor(Math.random()*(maxIdx-minIdx));
+    return {code, name: sym.name, series, idx};
+  }
+  return null;
+}
+
+function startPracticeRound(){
+  practiceRound = pickPracticeRound();
+  $('#practiceChart').style.display = '';
+  $('#practiceButtons').style.display = 'flex';
+  $('#practiceNext').style.display = 'none';
+  if(!practiceRound){
+    $('#practiceResult').innerHTML = `<div class="hint">歷史資料不足，抽不出可以練習的情境。</div>`;
+    $('#practiceButtons').style.display = 'none';
+    return;
+  }
+  $('#practiceResult').innerHTML = '';
+  $('#practiceLabel').textContent = '這是某檔標的過去某段時間的走勢，代碼判斷後才會公布。';
+  renderPracticeChart();
+}
+
+function renderPracticeChart(){
+  const {series, idx} = practiceRound;
+  const slice = series.slice(idx - PRACTICE_LOOKBACK + 1, idx + 1);
+  const W=400, H=140, padL=42, padR=10, padT=10, padB=20;
+  const vals = slice.map(d=>d.close);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const span = (max-min) || max*0.02 || 1;
+  const x = i => padL + (W-padL-padR) * (i/(slice.length-1));
+  const y = v => padT + (H-padT-padB) * (1 - (v-min)/span);
+  let g = '';
+  [0,0.5,1].forEach(f=>{
+    const yy = padT + (H-padT-padB)*(1-f);
+    g += `<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${W-padR}" y2="${yy.toFixed(1)}" stroke="var(--line)" stroke-width="1"/>`;
+    g += `<text x="${padL-6}" y="${(yy+3).toFixed(1)}" fill="var(--muted)" font-size="8" font-family="IBM Plex Mono" text-anchor="end">${(min+span*f).toFixed(1)}</text>`;
+  });
+  let path = slice.map((d,i)=>`${i===0?'M':'L'}${x(i).toFixed(1)} ${y(d.close).toFixed(1)}`).join(' ');
+  g += `<path d="${path}" fill="none" stroke="var(--violet)" stroke-width="2" stroke-linejoin="round"/>`;
+  const lastI = slice.length-1;
+  g += `<circle cx="${x(lastI).toFixed(1)}" cy="${y(slice[lastI].close).toFixed(1)}" r="3.5" fill="var(--violet)"/>`;
+  $('#practiceChart').innerHTML = g;
+}
+
+function resolvePractice(decision){
+  const {series, idx, code, name} = practiceRound;
+  const entry = series[idx], exit = series[idx + PRACTICE_HORIZON];
+  const changePct = (exit.close - entry.close) / entry.close * 100;
+  const win = decision==='buy' ? changePct > 0 : changePct <= 0;
+
+  $('#practiceButtons').style.display = 'none';
+  $('#practiceLabel').textContent = `標的：${code} ${name}，判斷當天 ${entry.date}，收盤 ${entry.close}`;
+  $('#practiceResult').innerHTML = `
+    <div class="debt-rows" style="padding-top:0">
+      <div class="kv"><div class="k">你的判斷</div><div class="v">${decision==='buy'?'會買進':'觀望'}</div></div>
+      <div class="kv"><div class="k">10個交易日後（${exit.date}）</div><div class="v" style="color:${changePct>=0?'var(--gain)':'var(--loss)'}">${changePct>=0?'+':''}${changePct.toFixed(2)}%</div></div>
+    </div>
+    <div class="flag ${win?'f-jade':'f-alarm'}" style="margin-top:10px"><span class="dot"></span><div><b>${win?'這次判斷方向對了':'這次判斷方向不對'}</b>${win?'':'——不代表看錯圖，價格走勢本身有隨機成分，10題裡對5、6題都算正常範圍。'}</div></div>`;
+
+  const stats = loadPracticeStats();
+  stats.rounds++;
+  if(decision==='buy'){ stats.buyCount++; if(win) stats.buyWins++; }
+  else{ stats.passCount++; if(win) stats.passWins++; }
+  try{ localStorage.setItem('practiceStats', JSON.stringify(stats)); }catch(e){}
+  renderPracticeStats();
+  $('#practiceNext').style.display = '';
+}
+
+function loadPracticeStats(){
+  try{
+    return JSON.parse(localStorage.getItem('practiceStats')||'null') || {rounds:0,buyCount:0,buyWins:0,passCount:0,passWins:0};
+  }catch(e){ return {rounds:0,buyCount:0,buyWins:0,passCount:0,passWins:0}; }
+}
+
+function renderPracticeStats(){
+  const s = loadPracticeStats();
+  const buyRate = s.buyCount ? (s.buyWins/s.buyCount*100).toFixed(0)+'%' : '—';
+  const passRate = s.passCount ? (s.passWins/s.passCount*100).toFixed(0)+'%' : '—';
+  $('#practiceStats').innerHTML = `累積練習 ${s.rounds} 題。「會買進」判斷對的比例 ${buyRate}（${s.buyWins}/${s.buyCount}），「觀望」判斷對的比例 ${passRate}（${s.passWins}/${s.passCount}）。這是你自己的練習紀錄，不是排行榜。`;
+}
+
+$('#practiceBuy').addEventListener('click', ()=>resolvePractice('buy'));
+$('#practicePass').addEventListener('click', ()=>resolvePractice('pass'));
+$('#practiceNext').addEventListener('click', startPracticeRound);
+$('#practiceReset').addEventListener('click', ()=>{
+  try{ localStorage.removeItem('practiceStats'); }catch(e){}
+  renderPracticeStats();
+});
+
 async function loadMomentum(){
   try{
     const res = await fetch('./data/momentum.json', {cache:'no-store'});
@@ -1582,6 +1725,7 @@ loadDcaState(); renderDca();
 loadPrices();
 loadBacktest();
 loadBacktest631();
+loadPriceHistory();
 loadMomentum();
 </script>
 
