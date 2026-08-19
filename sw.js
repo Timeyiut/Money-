@@ -106,6 +106,19 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // /data/*.json (prices, momentum, backtests, statements, price history):
+  // these get overwritten by CI on their own schedule, so "opened the app,
+  // still showed yesterday's number" is the whole point of fetching them
+  // in the first place. staleWhileRevalidate would always render whatever
+  // was cached from the *previous* visit and only refresh the cache in the
+  // background for next time — every open would look one visit stale.
+  // Network-first instead, falling back to cache only when actually
+  // offline.
+  if (url.pathname.includes('/data/') && url.pathname.endsWith('.json')) {
+    event.respondWith(networkFirst(req, SHELL_CACHE));
+    return;
+  }
+
   // Everything else: serve cache immediately, refresh in the background.
   event.respondWith(staleWhileRevalidate(req, SHELL_CACHE));
 });
@@ -117,6 +130,17 @@ async function cacheFirst(req, cacheName) {
   const res = await fetch(req);
   if (res.ok || res.type === 'opaque') cache.put(req, res.clone());
   return res;
+}
+
+async function networkFirst(req, cacheName) {
+  const cache = await caches.open(cacheName);
+  try {
+    const res = await fetch(req, { cache: 'no-store' });
+    if (res.ok) cache.put(req, res.clone());
+    return res;
+  } catch {
+    return (await cache.match(req)) || new Response('', { status: 504 });
+  }
 }
 
 async function staleWhileRevalidate(req, cacheName) {
