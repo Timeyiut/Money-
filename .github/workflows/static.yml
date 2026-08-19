@@ -2,12 +2,32 @@
 name: Deploy static content to Pages
 
 on:
-  # Runs on pushes targeting the default branch
+  # Runs on pushes targeting the default branch. Note: this only fires for
+  # pushes made with a real user/PAT identity. GitHub does not fire push
+  # events for commits made by the built-in GITHUB_TOKEN (anti-loop
+  # protection) -- which is exactly how every data-fetch workflow below
+  # commits its results. Without the workflow_run trigger underneath,
+  # every one of those data updates landed in the repo but never actually
+  # got redeployed to Pages -- confirmed by comparing this workflow's run
+  # history against those workflows' commit timestamps, none of their
+  # auto-commits appear as a trigger here.
   push:
     branches: ["main"]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+
+  # Redeploy whenever any data-fetch workflow finishes, since their
+  # GITHUB_TOKEN commits above don't trigger the push event.
+  workflow_run:
+    workflows:
+      - "Fetch stock prices"
+      - "Measure watchlist momentum"
+      - "Backtest 00919 dividend strategies"
+      - "Backtest 00631L MA crossover signals"
+      - "Fetch bank e-statements"
+      - "Fetch price history for scenario practice"
+    types: [completed]
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
@@ -24,6 +44,11 @@ concurrency:
 jobs:
   # Single deploy job since we're just deploying
   deploy:
+    # For workflow_run, only redeploy if the triggering run actually
+    # succeeded and produced a commit -- a failed data fetch shouldn't
+    # spin up a pointless deploy. Push/workflow_dispatch runs don't have
+    # a conclusion yet at trigger time, so always proceed for those.
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -31,6 +56,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # workflow_run doesn't check out the triggering run's commit by
+          # default -- pin explicitly so a data-fetch's own commit is what
+          # actually gets deployed, not whatever main was at when this
+          # workflow file was last edited.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
@@ -44,8 +75,14 @@ jobs:
         # literal placeholder string and the cache name never rotated.
         # Substitutes into a copy under ./dist so the repo's own source
         # files keep the placeholder unmodified.
+        env:
+          # $GITHUB_SHA alone is wrong for workflow_run events -- it's this
+          # workflow file's own commit, not the triggering run's, and would
+          # print a stale version even though the checked-out *files* above
+          # are correctly pinned to the triggering commit.
+          DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
-          VERSION="${GITHUB_SHA::7}"
+          VERSION="${DEPLOY_SHA::7}"
           BUILT_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           mkdir -p dist
           rsync -a --exclude='dist' --exclude='.git' --exclude='.github' ./ dist/
