@@ -34,7 +34,7 @@ import time
 from pathlib import Path
 from urllib.request import Request, urlopen
 
-CODES = ["00878", "00981A", "6531", "00405A", "1303", "00955"]
+CODES = ["00981A", "00405A", "00955"]  # 00878/6531/1303 dropped: 華南 holdings cleared out, nothing left tracking them
 
 YAHOO_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&range=5d"
 TWSE_URL = "https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL"

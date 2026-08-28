@@ -1175,10 +1175,6 @@ function renderDca(){
 }
 
 const HOLDINGS = [
-  { code:'00878', name:'國泰永續高股息', shares:100, cost:33.35, isEtf:true, account:'華南' },
-  { code:'00981A', name:'主動統一台股增長', shares:1000, cost:28.60, isEtf:true, account:'華南' },
-  { code:'6531', name:'愛普*', shares:30, cost:825.26, isEtf:false, account:'華南' },
-  { code:'1303', name:'南亞', shares:50, cost:187.06, isEtf:false, account:'華南' },
   { code:'00981A', name:'主動統一台股增長', shares:30, cost:29.47, isEtf:true, account:'國泰' },
   { code:'00955', name:'中信日本商社', shares:12, cost:16.25, isEtf:true, account:'國泰' },
   { code:'00981A', name:'主動統一台股增長', shares:330, cost:30.34, isEtf:true, account:'元大' },
@@ -1440,7 +1436,7 @@ async function loadPrices(){
       <div class="hint" style="margin-top:8px">${allFound
         ? `合計市值 ${fmt(total)}，資料日期 ${asOf||'—'}。已自動帶入下面「投資部位追蹤」的目前市值欄位。`
         : '部分持倉抓不到收盤價（可能是還沒跑過第一次、連假、或代碼查無資料），該筆先用成本價估算，實際市值請自行核對。'}
-      <br><br>「今賣淨損益」= 帳面損益 − 證交稅（ETF千分之1／個股千分之3）− 假設賣出手續費 ${SELL_FEE_FLAT} 元。這是長期持有的一般稅率，不是當沖減半後的1.5‰——這些都是定期定額持有，不是當日沖銷，用一般稅率才對。買進時已經付過的手續費不重複計算（成本均價通常未內含手續費，但金額極小，這裡先忽略，不影響判斷方向）。同一檔（00981A）在華南、國泰、元大三個帳戶共有三筆不同成本的買進紀錄，分開列示，不合併平均成本。元大那筆 00405A（2,000股）目前質押借款中，法律上還是你的資產，但被質押期間若要賣出需先解除質押。</div>`;
+      <br><br>「今賣淨損益」= 帳面損益 − 證交稅（ETF千分之1／個股千分之3）− 假設賣出手續費 ${SELL_FEE_FLAT} 元。這是長期持有的一般稅率，不是當沖減半後的1.5‰——這些都是定期定額持有，不是當日沖銷，用一般稅率才對。買進時已經付過的手續費不重複計算（成本均價通常未內含手續費，但金額極小，這裡先忽略，不影響判斷方向）。同一檔（00981A）在國泰、元大兩個帳戶共有兩筆不同成本的買進紀錄，分開列示，不合併平均成本。華南帳戶原持有的 00878、00981A、6531、南亞已清倉，不再列入追蹤。元大那筆 00405A（2,000股）目前質押借款中，法律上還是你的資產，但被質押期間若要賣出需先解除質押。</div>`;
 
     const pledgedLine = lines.find(l=>l.pledged);
     const reinvestLine = lines.find(l=>l.account==='元大' && l.code===MARGIN_LOAN.usedFor && !l.pledged);
