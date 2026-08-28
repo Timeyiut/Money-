@@ -740,7 +740,12 @@ const LOANS = [
     balance:225253, rate:2.500, payment:3654, term:84, paid:18,
     origin:280000, due:'08/14', maturity:'2032/01/14',
     acct:'822-0000229540180164',
-    note:'原始金額 280,000，已還本金 54,747（19.6%）', color:'#B07A0C', known:true }
+    note:'原始金額 280,000，已還本金 54,747（19.6%）', color:'#B07A0C', known:true },
+  { id:'E', name:'將來貸款', bank:'將來銀行 · 2026/08/28 撥款',
+    balance:350000, rate:4.12, payment:4286, term:96, paid:0,
+    origin:350000, due:'28日', maturity:'2034/08/28',
+    acct:'823-8863-0975-4368-70',
+    note:'剛撥款，已還本金 0。限制清償期間有綁約，提前清償違約金細節需另查合約條款，不要假設可以隨時提前還清不罰。', color:'#2D6E9E', known:true }
 ];
 
 const fmt = n => Math.round(n).toLocaleString('en-US');
@@ -812,7 +817,7 @@ function renderFlags(){
   $('#flags').innerHTML = `
   <div class="flag f-alarm"><span class="dot"></span><div>
     <b>分期信貸 ${B.rate}%，是加權平均的 ${ratio} 倍</b>
-    它佔總負債 ${(B.balance/total*100).toFixed(0)}%，卻吃掉每月利息的 ${(monthlyInterest(B)/intr*100).toFixed(0)}%。其餘三筆都在 1.7–2.5%，這一筆是唯一貴的。多出來的每一塊錢，先往這裡放。
+    它佔總負債 ${(B.balance/total*100).toFixed(0)}%，卻吃掉每月利息的 ${(monthlyInterest(B)/intr*100).toFixed(0)}%。其餘四筆都在 1.7–4.12%，這一筆還是最貴的。多出來的每一塊錢，先往這裡放。
   </div></div>
   <div class="flag f-caution"><span class="dot"></span><div>
     <b>其他貸款到期前可能差約 ${fmt(Math.max(gap,0))} 元</b>
@@ -829,7 +834,8 @@ function renderCalendar(){
     ['08/14','中信 3362','扣款 …0164',18220],
     ['08/14','中信 3375','同一帳戶',3654],
     ['08/15','其他貸款','綠色銀行',8410],
-    ['09/09','分期信貸','數位銀行',3425]
+    ['09/09','分期信貸','數位銀行',3425],
+    ['09/28','將來貸款','將來銀行 …4368-70',4286]
   ];
   const sum = rows.reduce((s,r)=>s+r[3],0);
   $('#calTbl').innerHTML =
