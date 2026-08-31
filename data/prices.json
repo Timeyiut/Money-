@@ -2,22 +2,22 @@
   {
     "code": "00981A",
     "name": "UPAMC Taiwan Growth Active ETF",
-    "close": "30.09",
-    "date": "2026-08-28",
+    "close": "29.40",
+    "date": "2026-08-31",
     "source": "Yahoo.TW"
   },
   {
     "code": "00405A",
     "name": "Fubon Taiwan Glory Active ETF",
-    "close": "8.78",
-    "date": "2026-08-28",
+    "close": "8.75",
+    "date": "2026-08-31",
     "source": "Yahoo.TW"
   },
   {
     "code": "00955",
     "name": "CTBC Japan Commercial and Wholesale Trade ETF",
-    "close": "15.54",
-    "date": "2026-08-28",
+    "close": "15.56",
+    "date": "2026-08-31",
     "source": "Yahoo.TWO"
   }
 ]
