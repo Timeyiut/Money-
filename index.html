@@ -487,6 +487,16 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
   </details>
 
   <details class="sec">
+    <summary class="sec-title">動能突破條件回測（放大到市值前50大）・歷史事實，不是名單</summary>
+    <div class="card">
+      <div class="hint" style="margin:0 0 12px">
+      跟上面9檔的回測是同一套6個條件，範圍換成「依最新一日成交金額排序的台股上市前50大」，不是官方0050指數成分股名單（那份清單抓不到，這是可自我驗證的替代做法），也不含上櫃股票，範圍選取方式如實揭露在資料裡。一樣是歷史事件回顧統計，不會列出今天符合條件的股票。方法在 <code>tools/backtest_momentum_screen_top50.py</code>。
+      </div>
+      <div id="backtestMomentumTop50Box"><div class="skel"><div class="skel-bar"></div><div class="skel-bar"></div><div class="skel-bar"></div><div class="skel-bar"></div></div></div>
+    </div>
+  </details>
+
+  <details class="sec">
     <summary class="sec-title">情境模擬練習・練習判斷，不是即時交易</summary>
     <div class="card">
       <div class="hint" style="margin:0 0 12px">
@@ -1306,6 +1316,33 @@ async function loadBacktestMomentumScreen(){
   }
 }
 
+async function loadBacktestMomentumTop50(){
+  try{
+    const res = await fetch('./data/backtest_momentum_screen_top50.json', {cache:'no-store'});
+    if(!res.ok) throw new Error('no data yet');
+    const data = await res.json();
+    const a = data.aggregate;
+    const retCell = h => {
+      const v = a[`avg_return_${h}d_pct`];
+      return `<td class="num" style="color:${v==null?'':(v>=0?'var(--gain)':'var(--loss)')}">${v==null?'—':(v>=0?'+':'')+v+'%'}</td>`;
+    };
+    const okStocks = data.per_stock.filter(s=>!s.error);
+    const withEvents = okStocks.filter(s=>s.events.length>0).length;
+    $('#backtestMomentumTop50Box').innerHTML = `
+      <div class="tbl-scroll"><table>
+        <thead><tr><th scope="col">${okStocks.length}檔合計次數</th><th scope="col">5日</th><th scope="col">10日</th><th scope="col">20日</th><th scope="col">60日</th></tr></thead>
+        <tbody><tr><td class="num">${a.events}</td>${[5,10,20,60].map(retCell).join('')}</tr></tbody>
+      </table></div>
+      <table style="margin-top:10px">
+        <thead><tr><th scope="col">交叉類型</th><th scope="col">20日勝率</th><th scope="col">60日勝率</th></tr></thead>
+        <tbody><tr><td>符合全部6條件</td><td class="num">${a.win_rate_20d_pct??'—'}%</td><td class="num">${a.win_rate_60d_pct??'—'}%</td></tr></tbody>
+      </table>
+      <div class="hint" style="margin-top:8px">產生時間：${data.generated_at}。${okStocks.length}檔中有${withEvents}檔在這段期間內至少出現過1次符合全部6條件。樣本數少時統計上不足以下結論，且同一段噴出走勢常被連續好幾天重複計入次數，實際獨立事件數會更少——這是回顧統計，不是「現在誰符合條件」的名單，也沒有考慮交易成本和稅。</div>`;
+  }catch(e){
+    $('#backtestMomentumTop50Box').innerHTML = `<div class="hint">還沒有回測資料，需先在 GitHub Actions 執行一次「Backtest 6-condition momentum screen (top 50 by trading value)」。</div>`;
+  }
+}
+
 async function loadScreenStatus(){
   try{
     const res = await fetch('./data/momentum_screen_status.json', {cache:'no-store'});
@@ -1805,6 +1842,7 @@ loadPrices();
 loadBacktest();
 loadBacktest631();
 loadBacktestMomentumScreen();
+loadBacktestMomentumTop50();
 loadScreenStatus();
 loadPriceHistory();
 loadMomentum();

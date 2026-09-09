@@ -29,6 +29,7 @@ on:
       - "Fetch price history for scenario practice"
       - "Backtest 6-condition momentum screen"
       - "Check momentum screen conditions status"
+      - "Backtest 6-condition momentum screen (top 50 by trading value)"
     types: [completed]
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
