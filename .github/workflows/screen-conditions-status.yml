@@ -1,0 +1,42 @@
+name: Check momentum screen conditions status
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 13:45 Taipei (05:45 UTC), weekdays -- same timing as the closing
+    # price fetch, so this reflects the day's final numbers.
+    - cron: "45 5 * * 1-5"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: screen-conditions-status
+  cancel-in-progress: false
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check conditions
+        run: python3 tools/screen_conditions_status.py
+
+      - name: Commit result
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/momentum_screen_status.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: update momentum screen conditions status"
+            git push
+          fi
