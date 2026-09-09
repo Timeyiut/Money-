@@ -467,6 +467,16 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
   </details>
 
   <details class="sec">
+    <summary class="sec-title">動能突破選股條件回測・歷史事實，不是名單</summary>
+    <div class="card">
+      <div class="hint" style="margin:0 0 12px">
+      機械式規則同時成立：①股價在月線上 ②10日漲幅&gt;5% ③1日振幅&gt;3% ④成交量創5日新高 ⑤盤中最高創5日新高 ⑥5日均量&gt;1000張。量測條件同時成立當天之後 5/10/20/60 個交易日的報酬率。範圍限定在既有的9檔觀察名單（與「動能觀察」同一份），不是全市場掃描，也不會輸出今天符合條件的股票。資料來源：證交所/櫃買中心日K，方法在 <code>tools/backtest_momentum_screen.py</code>。
+      </div>
+      <div id="backtestMomentumScreenBox"><div class="skel"><div class="skel-bar"></div><div class="skel-bar"></div><div class="skel-bar"></div><div class="skel-bar"></div></div></div>
+    </div>
+  </details>
+
+  <details class="sec">
     <summary class="sec-title">情境模擬練習・練習判斷，不是即時交易</summary>
     <div class="card">
       <div class="hint" style="margin:0 0 12px">
@@ -1253,6 +1263,39 @@ async function loadBacktest631(){
   }
 }
 
+async function loadBacktestMomentumScreen(){
+  try{
+    const res = await fetch('./data/backtest_momentum_screen.json', {cache:'no-store'});
+    if(!res.ok) throw new Error('no data yet');
+    const data = await res.json();
+    const a = data.aggregate;
+    const retCell = h => {
+      const v = a[`avg_return_${h}d_pct`];
+      return `<td class="num" style="color:${v==null?'':(v>=0?'var(--gain)':'var(--loss)')}">${v==null?'—':(v>=0?'+':'')+v+'%'}</td>`;
+    };
+    const stockRows = data.per_stock.map(s => s.error
+      ? `<tr><td>${s.name}</td><td colspan="2" class="hint">${s.error}</td></tr>`
+      : `<tr><td>${s.name}</td><td class="num">${s.events.length}</td><td>${s.events.slice(-3).map(e=>e.date).join('、')||'—'}</td></tr>`
+    ).join('');
+    $('#backtestMomentumScreenBox').innerHTML = `
+      <div class="tbl-scroll"><table>
+        <thead><tr><th scope="col">全部9檔合計次數</th><th scope="col">5日</th><th scope="col">10日</th><th scope="col">20日</th><th scope="col">60日</th></tr></thead>
+        <tbody><tr><td class="num">${a.events}</td>${[5,10,20,60].map(retCell).join('')}</tr></tbody>
+      </table></div>
+      <table style="margin-top:10px">
+        <thead><tr><th scope="col">交叉類型</th><th scope="col">20日勝率</th><th scope="col">60日勝率</th></tr></thead>
+        <tbody><tr><td>符合全部6條件</td><td class="num">${a.win_rate_20d_pct??'—'}%</td><td class="num">${a.win_rate_60d_pct??'—'}%</td></tr></tbody>
+      </table>
+      <div class="tbl-scroll" style="margin-top:10px"><table>
+        <thead><tr><th scope="col">個股</th><th scope="col">符合次數</th><th scope="col">最近幾次日期</th></tr></thead>
+        <tbody>${stockRows}</tbody>
+      </table></div>
+      <div class="hint" style="margin-top:8px">產生時間：${data.generated_at}。樣本數少時統計上不足以下結論——這是回顧過去這9檔股票有幾天同時符合這6個條件、之後平均漲跌如何，不是「現在誰符合條件」的名單，也沒有考慮交易成本和稅。</div>`;
+  }catch(e){
+    $('#backtestMomentumScreenBox').innerHTML = `<div class="hint">還沒有回測資料，需先在 GitHub Actions 執行一次「Backtest 6-condition momentum screen」。</div>`;
+  }
+}
+
 /* ---------- 情境模擬練習 ---------- */
 const PRACTICE_LOOKBACK = 60, PRACTICE_HORIZON = 10;
 let practiceHistory = null, practiceRound = null;
@@ -1727,6 +1770,7 @@ loadDcaState(); renderDca();
 loadPrices();
 loadBacktest();
 loadBacktest631();
+loadBacktestMomentumScreen();
 loadPriceHistory();
 loadMomentum();
 </script>
