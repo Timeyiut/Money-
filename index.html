@@ -477,6 +477,16 @@ footer{font-size:10.5px;color:var(--muted);line-height:1.7;padding:14px 4px 0;te
   </details>
 
   <details class="sec">
+    <summary class="sec-title">動能突破條件現況・純事實陳列，非選股名單</summary>
+    <div class="card">
+      <div class="hint" style="margin:0 0 12px">
+      顯示這9檔股票「目前」每個條件是否成立，跟上面回測用的是同一套6個定義。刻意不排序、不計分、不標記「符合幾項」，也不是買進或觀察建議——只是把數字攤開讓你自己看，要怎麼解讀是你的判斷。資料來源同上，方法在 <code>tools/screen_conditions_status.py</code>。
+      </div>
+      <div id="screenStatusBox"><div class="skel"><div class="skel-bar"></div><div class="skel-bar"></div><div class="skel-bar"></div><div class="skel-bar"></div></div></div>
+    </div>
+  </details>
+
+  <details class="sec">
     <summary class="sec-title">情境模擬練習・練習判斷，不是即時交易</summary>
     <div class="card">
       <div class="hint" style="margin:0 0 12px">
@@ -1296,6 +1306,30 @@ async function loadBacktestMomentumScreen(){
   }
 }
 
+async function loadScreenStatus(){
+  try{
+    const res = await fetch('./data/momentum_screen_status.json', {cache:'no-store'});
+    if(!res.ok) throw new Error('no data yet');
+    const data = await res.json();
+    const keys = ['above_month_line','return_10d_over_5pct','amplitude_over_3pct','volume_5d_high','high_5d_high','avg_volume_5d_over_1000_lots'];
+    const labels = ['月線上','10日漲幅','振幅','量5日高','高點5日高','5日均量'];
+    const mark = met => met ? '✅' : '—';
+    // Fixed watchlist order, never resorted by how many conditions are true.
+    const rows = data.stocks.map(s => s.error
+      ? `<tr><td>${s.name}</td><td colspan="${keys.length+1}" class="hint">${s.error}</td></tr>`
+      : `<tr><td>${s.name}<div class="hint" style="margin:0">${s.close}／${s.last_date}</div></td>${keys.map(k=>`<td class="num">${mark(s.conditions[k].met)}</td>`).join('')}</tr>`
+    ).join('');
+    $('#screenStatusBox').innerHTML = `
+      <div class="tbl-scroll"><table>
+        <thead><tr><th scope="col">股票</th>${labels.map(l=>`<th scope="col">${l}</th>`).join('')}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+      <div class="hint" style="margin-top:8px">產生時間：${data.generated_at}。表格依觀察名單固定順序排列，不依符合條件多寡調整順序。</div>`;
+  }catch(e){
+    $('#screenStatusBox').innerHTML = `<div class="hint">還沒有資料，需先在 GitHub Actions 執行一次「Check momentum screen conditions status」。</div>`;
+  }
+}
+
 /* ---------- 情境模擬練習 ---------- */
 const PRACTICE_LOOKBACK = 60, PRACTICE_HORIZON = 10;
 let practiceHistory = null, practiceRound = null;
@@ -1771,6 +1805,7 @@ loadPrices();
 loadBacktest();
 loadBacktest631();
 loadBacktestMomentumScreen();
+loadScreenStatus();
 loadPriceHistory();
 loadMomentum();
 </script>
