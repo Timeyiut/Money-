@@ -27,6 +27,7 @@ on:
       - "Backtest 00631L MA crossover signals"
       - "Fetch bank e-statements"
       - "Fetch price history for scenario practice"
+      - "Backtest 6-condition momentum screen"
     types: [completed]
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
