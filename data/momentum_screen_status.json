@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-02",
+  "generated_at": "2026-10-05",
   "conditions_legend": [
     "股價位於月線（20日均線）之上",
     "10日漲幅大於5%",
@@ -13,315 +13,315 @@
     {
       "code": "3105",
       "name": "穩懋",
-      "last_date": "2026-10-02",
-      "close": 591.0,
+      "last_date": "2026-10-05",
+      "close": 615.0,
       "conditions": {
         "above_month_line": {
           "met": true,
-          "close": 591.0,
-          "month_line": 482.35
+          "close": 615.0,
+          "month_line": 490.77
         },
         "return_10d_over_5pct": {
           "met": true,
-          "return_10d_pct": 25.08
+          "return_10d_pct": 30.57
         },
         "amplitude_over_3pct": {
           "met": true,
-          "amplitude_pct": 3.53
+          "amplitude_pct": 4.4
         },
         "volume_5d_high": {
-          "met": false,
-          "volume": 28498000.0,
-          "max_5d": 43189000.0
+          "met": true,
+          "volume": 48128000.0,
+          "max_5d": 48128000.0
         },
         "high_5d_high": {
           "met": true,
-          "high": 591.0,
-          "max_5d": 591.0
+          "high": 630.0,
+          "max_5d": 630.0
         },
         "avg_volume_5d_over_1000_lots": {
           "met": true,
-          "avg_volume_5d_lots": 27131.0
+          "avg_volume_5d_lots": 32418.2
         }
       }
     },
     {
       "code": "8021",
       "name": "尖點",
-      "last_date": "2026-10-02",
-      "close": 553.0,
+      "last_date": "2026-10-05",
+      "close": 560.0,
       "conditions": {
         "above_month_line": {
           "met": true,
-          "close": 553.0,
-          "month_line": 459.57
+          "close": 560.0,
+          "month_line": 466.9
         },
         "return_10d_over_5pct": {
           "met": true,
-          "return_10d_pct": 25.68
+          "return_10d_pct": 24.44
         },
         "amplitude_over_3pct": {
           "met": true,
-          "amplitude_pct": 10.34
+          "amplitude_pct": 7.41
         },
         "volume_5d_high": {
           "met": true,
-          "volume": 9216082.0,
-          "max_5d": 9216082.0
+          "volume": 12199882.0,
+          "max_5d": 12199882.0
         },
         "high_5d_high": {
           "met": true,
-          "high": 553.0,
-          "max_5d": 553.0
+          "high": 577.0,
+          "max_5d": 577.0
         },
         "avg_volume_5d_over_1000_lots": {
           "met": true,
-          "avg_volume_5d_lots": 2647.8
+          "avg_volume_5d_lots": 4897.8
         }
       }
     },
     {
       "code": "4979",
       "name": "華星光",
-      "last_date": "2026-10-02",
-      "close": 585.0,
+      "last_date": "2026-10-05",
+      "close": 598.0,
       "conditions": {
         "above_month_line": {
           "met": true,
-          "close": 585.0,
-          "month_line": 576.6
+          "close": 598.0,
+          "month_line": 577.9
         },
         "return_10d_over_5pct": {
           "met": true,
-          "return_10d_pct": 6.95
+          "return_10d_pct": 7.55
         },
         "amplitude_over_3pct": {
           "met": true,
-          "amplitude_pct": 3.77
+          "amplitude_pct": 4.27
         },
         "volume_5d_high": {
-          "met": false,
-          "volume": 1318000.0,
-          "max_5d": 8887000.0
+          "met": true,
+          "volume": 1322000.0,
+          "max_5d": 1322000.0
         },
         "high_5d_high": {
-          "met": false,
-          "high": 585.0,
-          "max_5d": 590.0
+          "met": true,
+          "high": 605.0,
+          "max_5d": 605.0
         },
         "avg_volume_5d_over_1000_lots": {
           "met": true,
-          "avg_volume_5d_lots": 2582.8
+          "avg_volume_5d_lots": 1069.8
         }
       }
     },
     {
       "code": "3363",
       "name": "上詮",
-      "last_date": "2026-10-02",
-      "close": 671.0,
+      "last_date": "2026-10-05",
+      "close": 664.0,
       "conditions": {
         "above_month_line": {
           "met": false,
-          "close": 671.0,
-          "month_line": 681.0
+          "close": 664.0,
+          "month_line": 675.5
         },
         "return_10d_over_5pct": {
           "met": false,
-          "return_10d_pct": -1.9
+          "return_10d_pct": 1.37
         },
         "amplitude_over_3pct": {
           "met": true,
-          "amplitude_pct": 4.37
+          "amplitude_pct": 3.73
         },
         "volume_5d_high": {
-          "met": true,
-          "volume": 3800000.0,
+          "met": false,
+          "volume": 2943000.0,
           "max_5d": 3800000.0
         },
         "high_5d_high": {
           "met": true,
-          "high": 680.0,
-          "max_5d": 680.0
+          "high": 688.0,
+          "max_5d": 688.0
         },
         "avg_volume_5d_over_1000_lots": {
           "met": true,
-          "avg_volume_5d_lots": 1940.6
+          "avg_volume_5d_lots": 2200.6
         }
       }
     },
     {
       "code": "4977",
       "name": "眾達-KY",
-      "last_date": "2026-10-02",
-      "close": 175.5,
+      "last_date": "2026-10-05",
+      "close": 175.0,
       "conditions": {
         "above_month_line": {
           "met": true,
-          "close": 175.5,
-          "month_line": 172.18
+          "close": 175.0,
+          "month_line": 172.3
         },
         "return_10d_over_5pct": {
           "met": false,
-          "return_10d_pct": -0.57
+          "return_10d_pct": 1.16
         },
         "amplitude_over_3pct": {
           "met": true,
-          "amplitude_pct": 3.23
+          "amplitude_pct": 3.42
         },
         "volume_5d_high": {
-          "met": true,
-          "volume": 5207603.0,
+          "met": false,
+          "volume": 4552619.0,
           "max_5d": 5207603.0
         },
         "high_5d_high": {
           "met": true,
-          "high": 177.0,
-          "max_5d": 177.0
+          "high": 180.5,
+          "max_5d": 180.5
         },
         "avg_volume_5d_over_1000_lots": {
           "met": true,
-          "avg_volume_5d_lots": 2165.8
+          "avg_volume_5d_lots": 2883.8
         }
       }
     },
     {
       "code": "3450",
       "name": "聯鈞",
-      "last_date": "2026-10-02",
-      "close": 543.0,
+      "last_date": "2026-10-05",
+      "close": 548.0,
       "conditions": {
         "above_month_line": {
           "met": true,
-          "close": 543.0,
-          "month_line": 530.83
+          "close": 548.0,
+          "month_line": 530.52
         },
         "return_10d_over_5pct": {
           "met": false,
-          "return_10d_pct": 0.37
+          "return_10d_pct": 4.38
         },
         "amplitude_over_3pct": {
           "met": true,
-          "amplitude_pct": 6.02
+          "amplitude_pct": 5.34
         },
         "volume_5d_high": {
-          "met": true,
-          "volume": 17359031.0,
+          "met": false,
+          "volume": 11920793.0,
           "max_5d": 17359031.0
         },
         "high_5d_high": {
           "met": true,
-          "high": 553.0,
-          "max_5d": 553.0
+          "high": 574.0,
+          "max_5d": 574.0
         },
         "avg_volume_5d_over_1000_lots": {
           "met": true,
-          "avg_volume_5d_lots": 7608.4
+          "avg_volume_5d_lots": 8989.7
         }
       }
     },
     {
       "code": "6451",
       "name": "訊芯-KY",
-      "last_date": "2026-10-02",
-      "close": 429.0,
+      "last_date": "2026-10-05",
+      "close": 432.0,
       "conditions": {
         "above_month_line": {
           "met": true,
-          "close": 429.0,
-          "month_line": 425.25
+          "close": 432.0,
+          "month_line": 424.35
         },
         "return_10d_over_5pct": {
           "met": false,
-          "return_10d_pct": 1.9
+          "return_10d_pct": 3.1
         },
         "amplitude_over_3pct": {
           "met": true,
-          "amplitude_pct": 3.87
+          "amplitude_pct": 4.9
         },
         "volume_5d_high": {
-          "met": true,
-          "volume": 2590932.0,
+          "met": false,
+          "volume": 2568357.0,
           "max_5d": 2590932.0
         },
         "high_5d_high": {
           "met": true,
-          "high": 435.0,
-          "max_5d": 435.0
+          "high": 446.0,
+          "max_5d": 446.0
         },
         "avg_volume_5d_over_1000_lots": {
           "met": true,
-          "avg_volume_5d_lots": 1296.8
+          "avg_volume_5d_lots": 1612.0
         }
       }
     },
     {
       "code": "3587",
       "name": "閎康",
-      "last_date": "2026-10-02",
-      "close": 245.0,
+      "last_date": "2026-10-05",
+      "close": 257.5,
       "conditions": {
         "above_month_line": {
           "met": true,
-          "close": 245.0,
-          "month_line": 241.32
+          "close": 257.5,
+          "month_line": 241.72
         },
         "return_10d_over_5pct": {
-          "met": false,
-          "return_10d_pct": 4.26
+          "met": true,
+          "return_10d_pct": 9.11
         },
         "amplitude_over_3pct": {
-          "met": false,
-          "amplitude_pct": 1.66
+          "met": true,
+          "amplitude_pct": 6.33
         },
         "volume_5d_high": {
           "met": true,
-          "volume": 511000.0,
-          "max_5d": 511000.0
+          "volume": 1326000.0,
+          "max_5d": 1326000.0
         },
         "high_5d_high": {
           "met": true,
-          "high": 246.0,
-          "max_5d": 246.0
+          "high": 261.0,
+          "max_5d": 261.0
         },
         "avg_volume_5d_over_1000_lots": {
           "met": false,
-          "avg_volume_5d_lots": 323.4
+          "avg_volume_5d_lots": 550.2
         }
       }
     },
     {
       "code": "3289",
       "name": "宜特",
-      "last_date": "2026-10-02",
-      "close": 143.0,
+      "last_date": "2026-10-05",
+      "close": 141.0,
       "conditions": {
         "above_month_line": {
           "met": true,
-          "close": 143.0,
-          "month_line": 137.28
+          "close": 141.0,
+          "month_line": 137.43
         },
         "return_10d_over_5pct": {
           "met": true,
-          "return_10d_pct": 8.75
+          "return_10d_pct": 5.62
         },
         "amplitude_over_3pct": {
           "met": false,
-          "amplitude_pct": 1.77
+          "amplitude_pct": 2.8
         },
         "volume_5d_high": {
           "met": false,
-          "volume": 568000.0,
+          "volume": 1115000.0,
           "max_5d": 1536000.0
         },
         "high_5d_high": {
-          "met": false,
-          "high": 143.0,
-          "max_5d": 143.5
+          "met": true,
+          "high": 144.5,
+          "max_5d": 144.5
         },
         "avg_volume_5d_over_1000_lots": {
           "met": false,
-          "avg_volume_5d_lots": 688.0
+          "avg_volume_5d_lots": 803.6
         }
       }
     }
