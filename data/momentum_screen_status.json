@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-08",
+  "generated_at": "2026-10-09",
   "conditions_legend": [
     "股價位於月線（20日均線）之上",
     "10日漲幅大於5%",
@@ -188,70 +188,70 @@
     {
       "code": "3450",
       "name": "聯鈞",
-      "last_date": "2026-10-08",
-      "close": 522.0,
+      "last_date": "2026-07-31",
+      "close": 372.0,
       "conditions": {
         "above_month_line": {
           "met": false,
-          "close": 522.0,
-          "month_line": 528.4
+          "close": 372.0,
+          "month_line": 451.7
         },
         "return_10d_over_5pct": {
           "met": false,
-          "return_10d_pct": -10.15
+          "return_10d_pct": -13.89
         },
         "amplitude_over_3pct": {
           "met": false,
-          "amplitude_pct": 2.8
+          "amplitude_pct": 2.22
         },
         "volume_5d_high": {
           "met": false,
-          "volume": 4811409.0,
-          "max_5d": 17359031.0
+          "volume": 2859243.0,
+          "max_5d": 10490110.0
         },
         "high_5d_high": {
           "met": false,
-          "high": 533.0,
-          "max_5d": 574.0
+          "high": 372.0,
+          "max_5d": 442.0
         },
         "avg_volume_5d_over_1000_lots": {
           "met": true,
-          "avg_volume_5d_lots": 10430.2
+          "avg_volume_5d_lots": 7842.3
         }
       }
     },
     {
       "code": "6451",
       "name": "訊芯-KY",
-      "last_date": "2026-08-31",
-      "close": 456.0,
+      "last_date": "2026-10-08",
+      "close": 420.5,
       "conditions": {
         "above_month_line": {
-          "met": true,
-          "close": 456.0,
-          "month_line": 434.15
+          "met": false,
+          "close": 420.5,
+          "month_line": 421.07
         },
         "return_10d_over_5pct": {
           "met": false,
-          "return_10d_pct": -0.55
+          "return_10d_pct": -1.06
         },
         "amplitude_over_3pct": {
           "met": true,
-          "amplitude_pct": 6.62
+          "amplitude_pct": 3.17
         },
         "volume_5d_high": {
           "met": false,
-          "volume": 3770094.0,
-          "max_5d": 10343290.0
+          "volume": 1251508.0,
+          "max_5d": 2590932.0
         },
         "high_5d_high": {
           "met": false,
-          "high": 456.0,
-          "max_5d": 471.5
+          "high": 426.5,
+          "max_5d": 446.0
         },
         "avg_volume_5d_over_1000_lots": {
           "met": true,
-          "avg_volume_5d_lots": 5789.3
+          "avg_volume_5d_lots": 1989.2
         }
       }
     },
