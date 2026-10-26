@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-23",
+  "generated_at": "2026-10-26",
   "conditions_legend": [
     "股價位於月線（20日均線）之上",
     "10日漲幅大於5%",
@@ -223,35 +223,35 @@
     {
       "code": "6451",
       "name": "訊芯-KY",
-      "last_date": "2026-10-22",
-      "close": 351.0,
+      "last_date": "2026-08-31",
+      "close": 456.0,
       "conditions": {
         "above_month_line": {
-          "met": false,
-          "close": 351.0,
-          "month_line": 399.05
+          "met": true,
+          "close": 456.0,
+          "month_line": 434.15
         },
         "return_10d_over_5pct": {
           "met": false,
-          "return_10d_pct": -17.7
+          "return_10d_pct": -0.55
         },
         "amplitude_over_3pct": {
           "met": true,
-          "amplitude_pct": 8.03
+          "amplitude_pct": 6.62
         },
         "volume_5d_high": {
           "met": false,
-          "volume": 1164514.0,
-          "max_5d": 1231054.0
+          "volume": 3770094.0,
+          "max_5d": 10343290.0
         },
         "high_5d_high": {
-          "met": true,
-          "high": 381.0,
-          "max_5d": 381.0
+          "met": false,
+          "high": 456.0,
+          "max_5d": 471.5
         },
         "avg_volume_5d_over_1000_lots": {
           "met": true,
-          "avg_volume_5d_lots": 1056.2
+          "avg_volume_5d_lots": 5789.3
         }
       }
     },
