@@ -45,16 +45,22 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Single deploy job since we're just deploying
-  deploy:
+  # Split into build + deploy jobs (rather than one job doing both) because
+  # actions/deploy-pages querying the Artifacts API for an artifact that
+  # actions/upload-pages-artifact just uploaded moments earlier, in the same
+  # job, is a known race: the upload call returns before the artifact is
+  # reliably visible to that API, so deploy-pages intermittently fails with
+  # "No artifacts named 'github-pages' were found for this workflow run"
+  # (hit on runs #276 and #277). Running deploy as a separate job that
+  # `needs: build` has GitHub resolve the job dependency -- and therefore
+  # the artifact's registration -- before deploy starts, which is also the
+  # layout GitHub's own starter workflow uses.
+  build:
     # For workflow_run, only redeploy if the triggering run actually
     # succeeded and produced a commit -- a failed data fetch shouldn't
     # spin up a pointless deploy. Push/workflow_dispatch runs don't have
     # a conclusion yet at trigger time, so always proceed for those.
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -96,6 +102,16 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: 'dist'
+
+  deploy:
+    # No `if` needed here: when `build` is skipped (data fetch failed) the
+    # default needs-condition skips this job too.
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
